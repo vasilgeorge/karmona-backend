@@ -11,4 +11,3 @@ router = APIRouter(tags=["health"])
 async def health_check() -> dict[str, str]:
     """Health check endpoint."""
     return {"status": "healthy", "service": "karmona-api"}
-

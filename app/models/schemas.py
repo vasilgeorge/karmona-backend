@@ -159,4 +159,3 @@ class BedrockReflection(BaseModel):
     karma_score: int = Field(..., ge=0, le=100)
     reading: str
     rituals: list[str]
-

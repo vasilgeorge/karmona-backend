@@ -112,4 +112,3 @@ COMMENT ON COLUMN users.moon_sign IS 'Zodiac moon sign (requires birth time)';
 COMMENT ON COLUMN daily_reports.karma_score IS 'Karma score from 0-100';
 COMMENT ON COLUMN daily_reports.actions IS 'JSON array of action types';
 COMMENT ON COLUMN daily_reports.rituals IS 'JSON array of 2 ritual suggestions';
-

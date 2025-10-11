@@ -49,4 +49,3 @@ async def onboard_user(request: OnboardingRequest) -> OnboardingResponse:
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Onboarding failed: {str(e)}")
-

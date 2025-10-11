@@ -165,4 +165,3 @@ Create a reflection connecting their actions to their astrological energy and su
             reading="Your energy today reflects a journey of self-discovery. The cosmos reminds you that every action ripples through the universe. Continue to nurture your inner light.",
             rituals=["Write gratitude list", "Five mindful breaths"],
         )
-

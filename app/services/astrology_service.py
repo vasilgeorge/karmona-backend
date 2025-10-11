@@ -160,4 +160,3 @@ class AstrologyService:
             "Pisces": "Water",
         }
         return elements.get(sign, "Unknown")
-

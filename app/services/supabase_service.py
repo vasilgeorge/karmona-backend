@@ -152,4 +152,3 @@ class SupabaseService:
             note=data.get("note"),
             created_at=datetime.fromisoformat(data["created_at"]),
         )
-

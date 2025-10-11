@@ -86,4 +86,3 @@ async def generate_reflection(request: DailyInputRequest) -> ReflectionResponse:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Reflection generation failed: {str(e)}")
-

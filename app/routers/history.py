@@ -43,4 +43,3 @@ async def get_user_history(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch history: {str(e)}")
-
