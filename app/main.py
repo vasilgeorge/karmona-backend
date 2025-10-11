@@ -16,6 +16,7 @@ from app.routers import (
     onboarding_router,
     reflection_router,
     history_router,
+    waitlist_router,
 )
 
 
@@ -69,6 +70,7 @@ app.include_router(health_router)
 app.include_router(onboarding_router, prefix=settings.api_v1_prefix)
 app.include_router(reflection_router, prefix=settings.api_v1_prefix)
 app.include_router(history_router, prefix=settings.api_v1_prefix)
+app.include_router(waitlist_router, prefix=settings.api_v1_prefix)
 
 
 if __name__ == "__main__":
