@@ -22,20 +22,14 @@ class Settings(BaseSettings):
     debug: bool = False
     api_v1_prefix: str = "/api/v1"
 
-    # CORS Settings
-    allowed_origins: list[str] = []
+    # CORS Settings - accepts comma-separated string or list
+    allowed_origins: str = "http://localhost:3000,https://karmona.vercel.app,https://karmona.ai"
 
-    @field_validator("allowed_origins", mode="before")
-    @classmethod
-    def parse_allowed_origins(cls, v: str | list[str] | None) -> list[str]:
-        """Parse allowed_origins from comma-separated string or list."""
-        if v is None:
-            return ["http://localhost:3000", "https://karmona.vercel.app", "https://karmona.ai"]
-        if isinstance(v, list):
-            return v
-        if isinstance(v, str):
-            return [origin.strip() for origin in v.split(",") if origin.strip()]
-        return ["http://localhost:3000", "https://karmona.vercel.app", "https://karmona.ai"]
+    def get_allowed_origins(self) -> list[str]:
+        """Get allowed origins as a list."""
+        if isinstance(self.allowed_origins, list):
+            return self.allowed_origins
+        return [origin.strip() for origin in self.allowed_origins.split(",") if origin.strip()]
 
     # AWS Bedrock Settings
     aws_region: str = "us-east-1"
