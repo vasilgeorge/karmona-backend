@@ -2,6 +2,7 @@
 Configuration management using Pydantic Settings.
 """
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -22,11 +23,19 @@ class Settings(BaseSettings):
     api_v1_prefix: str = "/api/v1"
 
     # CORS Settings
-    allowed_origins: list[str] = [
-        "http://localhost:3000",
-        "https://karmona.vercel.app",
-        "https://karmona.ai",
-    ]
+    allowed_origins: list[str] = []
+
+    @field_validator("allowed_origins", mode="before")
+    @classmethod
+    def parse_allowed_origins(cls, v: str | list[str] | None) -> list[str]:
+        """Parse allowed_origins from comma-separated string or list."""
+        if v is None:
+            return ["http://localhost:3000", "https://karmona.vercel.app", "https://karmona.ai"]
+        if isinstance(v, list):
+            return v
+        if isinstance(v, str):
+            return [origin.strip() for origin in v.split(",") if origin.strip()]
+        return ["http://localhost:3000", "https://karmona.vercel.app", "https://karmona.ai"]
 
     # AWS Bedrock Settings
     aws_region: str = "us-east-1"
