@@ -7,8 +7,8 @@ WORKDIR /app
 # Install uv
 RUN pip install --no-cache-dir uv
 
-# Copy dependency files
-COPY pyproject.toml .python-version ./
+# Copy dependency files and README (needed for package metadata)
+COPY pyproject.toml .python-version README.md ./
 
 # Install dependencies
 RUN uv sync --no-dev
@@ -25,4 +25,3 @@ ENV PORT=8000
 
 # Run the application
 CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
-
