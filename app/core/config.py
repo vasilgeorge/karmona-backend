@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     api_v1_prefix: str = "/api/v1"
 
     # CORS Settings - accepts comma-separated string or list
-    allowed_origins: str = "http://localhost:3000,https://karmona.vercel.app,https://karmona.ai"
+    allowed_origins: str = "http://localhost:3000,https://karmona.vercel.app,https://karmona-frontend.vercel.app,https://karmona.ai"
 
     def get_allowed_origins(self) -> list[str]:
         """Get allowed origins as a list."""
