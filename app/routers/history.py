@@ -4,15 +4,17 @@ User history endpoints.
 
 from fastapi import APIRouter, HTTPException, Query
 
+from app.core.auth import CurrentUserId
 from app.models.schemas import HistoryResponse
 from app.services import SupabaseService
 
 router = APIRouter(prefix="/history", tags=["history"])
 
 
-@router.get("/{user_id}", response_model=HistoryResponse)
+@router.get("/", response_model=HistoryResponse)
 async def get_user_history(
-    user_id: str, limit: int = Query(default=7, ge=1, le=30)
+    user_id: CurrentUserId,  # Authenticated user_id from JWT
+    limit: int = Query(default=7, ge=1, le=30),
 ) -> HistoryResponse:
     """
     Get user's karma history (last N days).

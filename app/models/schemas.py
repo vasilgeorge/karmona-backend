@@ -68,7 +68,7 @@ ActionType = Literal[
 class DailyInputRequest(BaseModel):
     """User's daily mood and actions input."""
 
-    user_id: str
+    # Note: user_id comes from JWT authentication, not from request body
     mood: MoodType
     actions: list[ActionType] = Field(..., min_length=1, max_length=10)
     note: str | None = Field(None, max_length=500, description="Optional personal note")

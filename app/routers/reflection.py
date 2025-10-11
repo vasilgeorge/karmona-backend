@@ -6,6 +6,7 @@ from datetime import date
 
 from fastapi import APIRouter, HTTPException
 
+from app.core.auth import CurrentUserId
 from app.models.schemas import DailyInputRequest, ReflectionResponse
 from app.services import SupabaseService, AstrologyService, BedrockService
 
@@ -13,7 +14,10 @@ router = APIRouter(prefix="/reflection", tags=["reflection"])
 
 
 @router.post("/generate", response_model=ReflectionResponse)
-async def generate_reflection(request: DailyInputRequest) -> ReflectionResponse:
+async def generate_reflection(
+    request: DailyInputRequest,
+    user_id: CurrentUserId,  # Authenticated user_id from JWT
+) -> ReflectionResponse:
     """
     Generate a daily karma reflection based on user's mood and actions.
 
@@ -30,14 +34,14 @@ async def generate_reflection(request: DailyInputRequest) -> ReflectionResponse:
         astrology_service = AstrologyService()
         bedrock_service = BedrockService()
 
-        # Get user data
-        user = await supabase_service.get_user(request.user_id)
+        # Get user data (using authenticated user_id from JWT)
+        user = await supabase_service.get_user(user_id)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
         # Check if user already has a report for today
         today = date.today()
-        existing_report = await supabase_service.get_report_by_date(request.user_id, today)
+        existing_report = await supabase_service.get_report_by_date(user_id, today)
         if existing_report:
             return ReflectionResponse(
                 karma_score=existing_report.karma_score,
@@ -62,9 +66,9 @@ async def generate_reflection(request: DailyInputRequest) -> ReflectionResponse:
             today=today,
         )
 
-        # Store in database
+        # Store in database (using authenticated user_id)
         report = await supabase_service.create_daily_report(
-            user_id=request.user_id,
+            user_id=user_id,
             report_date=today,
             mood=request.mood,
             actions=request.actions,

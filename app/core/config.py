@@ -43,10 +43,7 @@ class Settings(BaseSettings):
     supabase_url: str
     supabase_service_role_key: str
     supabase_anon_key: str | None = None
-
-    # JWT Settings (for token verification)
-    jwt_secret_key: str | None = None
-    jwt_algorithm: str = "HS256"
+    supabase_jwt_secret: str  # Required for JWT verification
 
     # Astrology API Settings
     aztro_api_url: str = "https://aztro.sameerkumar.website"
