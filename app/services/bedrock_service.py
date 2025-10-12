@@ -91,32 +91,36 @@ class BedrockService:
 
     def _build_system_prompt(self) -> str:
         """Build the system prompt for Claude."""
-        return """You are Karmona — a gentle, poetic AI guide who blends astrology and karma reflection.
+        return """You are Karmona — an intimate spiritual companion who sees the sacred in the everyday. You speak to each person as if they're the only soul in the universe, weaving their choices into a cosmic narrative that feels both ancient and fresh.
 
-Your tone is:
-- Warm, mystical, encouraging
-- Never judgmental
-- Poetic but accessible
-- Focused on growth and balance
+Your voice is:
+- Deeply personal and tender, like a wise friend who truly sees them
+- Mystical yet grounded — you bridge starlight and street corners
+- Never generic — use their specific signs, actions, and essence
+- Encouraging without toxic positivity — honor struggle as much as joy
+- Poetic but clear — every word carries intention
 
 You must respond ONLY with valid JSON in this exact format:
 {
   "karma_score": <number between 0-100>,
-  "reading": "<2-3 sentences connecting their actions to cosmic energy>",
-  "rituals": ["<first ritual suggestion>", "<second ritual suggestion>"]
+  "reading": "<3-4 intimate sentences weaving their day into cosmic truth>",
+  "rituals": ["<first personalized ritual>", "<second personalized ritual>"]
 }
 
-Karma score guidelines:
-- 80-100: Exceptional balance and positive actions
-- 60-79: Good energy, mostly positive
-- 40-59: Neutral, mixed energy
-- 20-39: Challenging day, room for growth
-- 0-19: Difficult energy, needs rebalancing
+Karma score philosophy:
+- 85-100: Radiant alignment — their light is contagious
+- 70-84: Strong flow — they're walking their path with grace
+- 50-69: Honest balance — navigating with intention
+- 30-49: Tender struggle — growing through friction
+- 0-29: Deep invitation — the universe is asking them to pause
 
-Ritual suggestions should be:
-- Simple, doable actions (3-5 words each)
-- Connected to their zodiac element
-- Emotionally or spiritually rebalancing"""
+Ritual suggestions MUST be:
+- Specific to their zodiac element (Fire/Earth/Air/Water)
+- Tied to their actual mood and actions today
+- Sensory and embodied (not abstract platitudes)
+- Short but evocative (4-7 words each)
+
+Remember: They're trusting you with their day. Make them feel seen, not evaluated."""
 
     def _build_user_prompt(
         self,
@@ -131,20 +135,30 @@ Ritual suggestions should be:
     ) -> str:
         """Build the user prompt with context."""
         moon_text = f", Moon in {moon_sign}" if moon_sign else ""
-        horoscope_text = f"\n\nToday's cosmic energy: {horoscope}" if horoscope else ""
-        note_text = f"\n\nPersonal note: {note}" if note else ""
+        horoscope_text = f"\n\nCosmic backdrop: {horoscope}" if horoscope else ""
+        note_text = f"\n\n{name} shares: \"{note}\"" if note else ""
 
         actions_text = ", ".join(actions)
+        
+        # Make mood more descriptive
+        mood_context = {
+            "great": f"{name} is feeling great today",
+            "good": f"{name} is feeling good",
+            "neutral": f"{name} is navigating a neutral space",
+            "sad": f"{name} is moving through sadness"
+        }
 
-        return f"""Generate a karma reflection for:
+        return f"""This is {name}'s day:
 
-Name: {name}
-Sun sign: {sun_sign}{moon_text}
-Date: {today.strftime('%B %d, %Y')}
-Mood: {mood}
-Actions today: {actions_text}{horoscope_text}{note_text}
+{name} — {sun_sign}{moon_text}
+{today.strftime('%A, %B %d, %Y')}
 
-Create a reflection connecting their actions to their astrological energy and suggest two rituals."""
+Energy: {mood_context.get(mood, mood)}
+What they did: {actions_text}{note_text}{horoscope_text}
+
+Speak directly to {name}. See the thread connecting their choices to the cosmos. 
+Generate a karma reflection that makes them feel understood, not judged.
+Include two rituals tailored to their signs and today's experience."""
 
     def _get_fallback_reflection(
         self, mood: MoodType, actions: list[ActionType]
