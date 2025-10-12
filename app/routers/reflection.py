@@ -9,6 +9,7 @@ from fastapi import APIRouter, HTTPException
 from app.core.auth import CurrentUserId
 from app.models.schemas import DailyInputRequest, ReflectionResponse
 from app.services import SupabaseService, AstrologyService, BedrockService
+from app.services.kb_retrieval_service import KBRetrievalService
 
 router = APIRouter(prefix="/reflection", tags=["reflection"])
 
@@ -58,6 +59,7 @@ async def generate_reflection(
         supabase_service = SupabaseService()
         astrology_service = AstrologyService()
         bedrock_service = BedrockService()
+        kb_retrieval_service = KBRetrievalService()
 
         # Get user data (using authenticated user_id from JWT)
         user = await supabase_service.get_user(user_id)
@@ -76,10 +78,24 @@ async def generate_reflection(
                 created_at=existing_report.created_at,
             )
 
-        # Get today's horoscope
+        # Get today's horoscope (legacy API - still useful)
         horoscope = await astrology_service.get_daily_horoscope(user.sun_sign)
+        
+        # NEW: Get zodiac element for KB search
+        zodiac_element = astrology_service.get_zodiac_element(user.sun_sign)
+        
+        # NEW: Retrieve enriched context from Knowledge Base
+        print(f"🔍 Retrieving KB context for {user.sun_sign}...")
+        enriched_context = await kb_retrieval_service.retrieve_context(
+            sun_sign=user.sun_sign,
+            moon_sign=user.moon_sign,
+            mood=request.mood,
+            actions=request.actions,
+            zodiac_element=zodiac_element,
+            max_results=5,
+        )
 
-        # Generate reflection via Bedrock
+        # Generate reflection via Bedrock with enriched KB data
         bedrock_reflection = await bedrock_service.generate_reflection(
             name=user.name,
             sun_sign=user.sun_sign,
@@ -88,6 +104,7 @@ async def generate_reflection(
             actions=request.actions,
             note=request.note,
             horoscope=horoscope,
+            enriched_context=enriched_context,  # NEW: KB-enhanced data
             today=today,
         )
 

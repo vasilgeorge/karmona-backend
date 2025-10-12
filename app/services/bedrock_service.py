@@ -38,6 +38,7 @@ class BedrockService:
         actions: list[ActionType],
         note: str | None,
         horoscope: str | None,
+        enriched_context: str | None,
         today: date,
     ) -> BedrockReflection:
         """
@@ -47,7 +48,7 @@ class BedrockService:
         # Build the prompt
         system_prompt = self._build_system_prompt()
         user_prompt = self._build_user_prompt(
-            name, sun_sign, moon_sign, mood, actions, note, horoscope, today
+            name, sun_sign, moon_sign, mood, actions, note, horoscope, enriched_context, today
         )
 
         try:
@@ -103,9 +104,16 @@ Your voice is:
 You must respond ONLY with valid JSON in this exact format:
 {
   "karma_score": <number between 0-100>,
-  "reading": "<3-4 intimate sentences weaving their day into cosmic truth>",
+  "reading": "<3-4 intimate paragraphs with markdown formatting>",
   "rituals": ["<first personalized ritual>", "<second personalized ritual>"]
 }
+
+IMPORTANT - Reading Format:
+- Use **bold** for emphasis on key cosmic themes or user's signs
+- Use *italics* for poetic elements or mystical phrases
+- Include 1-2 relevant emojis naturally (🌙 ✨ 🔥 💫 🌊 etc.)
+- Break into 2-3 short paragraphs for readability
+- Make it feel like poetry meets personal letter
 
 Karma score philosophy:
 - 85-100: Radiant alignment — their light is contagious
@@ -131,12 +139,14 @@ Remember: They're trusting you with their day. Make them feel seen, not evaluate
         actions: list[ActionType],
         note: str | None,
         horoscope: str | None,
+        enriched_context: str | None,
         today: date,
     ) -> str:
         """Build the user prompt with context."""
         moon_text = f", Moon in {moon_sign}" if moon_sign else ""
-        horoscope_text = f"\n\nCosmic backdrop: {horoscope}" if horoscope else ""
+        horoscope_text = f"\n\nToday's {sun_sign} horoscope: {horoscope}" if horoscope else ""
         note_text = f"\n\n{name} shares: \"{note}\"" if note else ""
+        enriched_text = f"\n\n{enriched_context}" if enriched_context else ""
 
         actions_text = ", ".join(actions)
         
@@ -154,11 +164,16 @@ Remember: They're trusting you with their day. Make them feel seen, not evaluate
 {today.strftime('%A, %B %d, %Y')}
 
 Energy: {mood_context.get(mood, mood)}
-What they did: {actions_text}{note_text}{horoscope_text}
+What they did: {actions_text}{note_text}{horoscope_text}{enriched_text}
 
-Speak directly to {name}. See the thread connecting their choices to the cosmos. 
-Generate a karma reflection that makes them feel understood, not judged.
-Include two rituals tailored to their signs and today's experience."""
+Speak directly to {name}. Weave together:
+- Their personal energy ({sun_sign}{moon_text})
+- Today's cosmic backdrop (use the enriched context if provided)
+- Their mood and actions
+- Real astrological events happening now
+
+Generate a beautifully formatted karma reflection with markdown (bold, italics, emojis).
+Make them feel the magic is real - because it is."""
 
     def _get_fallback_reflection(
         self, mood: MoodType, actions: list[ActionType]
