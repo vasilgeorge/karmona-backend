@@ -10,6 +10,7 @@ import boto3
 
 from app.core.config import settings
 from app.services.browser_scraper import BrowserScraper
+from app.services.scraping_sources import get_enabled_sources, count_total_scrapes
 
 
 class DailyScraper:
@@ -34,93 +35,80 @@ class DailyScraper:
             aws_secret_access_key=settings.aws_secret_access_key,
         )
     
-    def scrape_nypost_astrology(self) -> Dict[str, Any]:
-        """Scrape NY Post astrology section."""
-        result = self.browser_scraper.fetch_and_extract(
-            url="https://nypost.com/astrology/",
-            extraction_prompt="""
-            Extract today's main astrology insights and cosmic events from this page.
-            Include:
-            1. Featured headline and its key insights
-            2. Any mentions of planetary transits or cosmic events
-            3. Guidance for specific zodiac signs if mentioned
-            
-            Format as a detailed summary covering all important astrological information.
-            """
-        )
+    def scrape_source(
+        self,
+        source_name: str,
+        url: str,
+        prompt: str,
+        context: str = "general",
+    ) -> Dict[str, Any] | None:
+        """
+        Scrape a single URL from a configured source.
         
-        if result['success']:
-            return {
-                "source": "nypost",
-                "url": "https://nypost.com/astrology/",
-                "content": result['data'],
-                "tags": ["cosmic-events", "daily-astrology"],
-            }
-        return None
-    
-    def scrape_cafe_astrology(self) -> Dict[str, Any]:
-        """Scrape Cafe Astrology daily aspects."""
-        result = self.browser_scraper.fetch_and_extract(
-            url="https://www.cafeastrology.com/",
-            extraction_prompt="""
-            Extract today's astrological information:
-            1. Current moon phase and moon sign
-            2. Planetary aspects happening today
-            3. Any retrograde planets
-            4. Daily cosmic energy summary
+        Args:
+            source_name: Name of the source (e.g., "astrostyle")
+            url: URL to scrape
+            prompt: Extraction prompt (may include {sign} placeholder)
+            context: Additional context (e.g., sign name)
             
-            Be specific and include all relevant astrological details.
-            """
-        )
-        
-        if result['success']:
-            return {
-                "source": "cafeastrology",
-                "url": "https://www.cafeastrology.com/",
-                "content": result['data'],
-                "tags": ["moon-phase", "aspects", "transits"],
-            }
-        return None
-    
-    def scrape_spiritual_wisdom(self) -> Dict[str, Any]:
-        """Scrape spiritual wisdom sites."""
-        result = self.browser_scraper.fetch_and_extract(
-            url="https://tinybuddha.com/",
-            extraction_prompt="""
-            Extract today's or recent spiritual wisdom and teachings.
-            Look for:
-            1. Daily inspirational quotes or teachings
-            2. Mindfulness practices
-            3. Guidance on intention-setting or self-reflection
+        Returns:
+            Formatted document or None if failed
+        """
+        try:
+            # Format prompt with context (e.g., replace {sign})
+            formatted_prompt = prompt.format(sign=context)
             
-            Summarize the key spiritual insights in an accessible way.
-            """
-        )
-        
-        if result['success']:
-            return {
-                "source": "tinybuddha",
-                "url": "https://tinybuddha.com/",
-                "content": result['data'],
-                "tags": ["spiritual-wisdom", "mindfulness"],
-            }
-        return None
+            # Scrape and extract
+            result = self.browser_scraper.fetch_and_extract(
+                url=url,
+                extraction_prompt=formatted_prompt,
+                wait_seconds=4,  # Give pages time to load
+            )
+            
+            if result['success'] and result['data']:
+                # Determine tags based on source type
+                tags = []
+                if context != "general":
+                    tags.append(f"sign-{context.lower()}")
+                tags.append(f"source-{source_name}")
+                
+                return {
+                    "source": source_name,
+                    "url": url,
+                    "content": result['data'],
+                    "context": context,
+                    "tags": tags,
+                }
+            
+            return None
+            
+        except Exception as e:
+            print(f"❌ Error scraping {url}: {e}")
+            return None
     
-    def _upload_to_s3(self, document: Dict[str, Any], today: date) -> bool:
+    def _upload_to_s3(self, document: Dict[str, Any], today: date, index: int) -> bool:
         """
         Upload document to S3 in Knowledge Base-friendly format.
         
         Args:
             document: Scraped document with content and metadata
             today: Current date
+            index: Unique index for this document
             
         Returns:
             True if upload successful
         """
         try:
-            # Create filename with date
+            # Create filename with date and context (for sign-specific)
             source = document['source']
-            filename = f"daily/{today.isoformat()}/{source}.json"
+            context = document.get('context', 'general')
+            
+            if context != "general":
+                # Sign-specific: source_sign_date.json
+                filename = f"daily/{today.isoformat()}/{source}_{context}.json"
+            else:
+                # General: source_date.json
+                filename = f"daily/{today.isoformat()}/{source}.json"
             
             # Format document for Knowledge Base
             kb_document = {
@@ -174,7 +162,11 @@ class DailyScraper:
             Summary of scraping results
         """
         today = date.today()
+        sources = get_enabled_sources()
+        total_scrapes = count_total_scrapes()
+        
         print(f"🌅 Starting daily scrape for {today.isoformat()}")
+        print(f"📊 Total sources: {len(sources)} | Total URLs: {total_scrapes}")
         print("=" * 60)
         
         results = {
@@ -182,31 +174,50 @@ class DailyScraper:
             "scraped": [],
             "failed": [],
             "uploaded": 0,
+            "total": total_scrapes,
         }
         
-        # Scrape all sources (synchronously, one at a time)
-        scraping_tasks = [
-            ("nypost", self.scrape_nypost_astrology),
-            ("cafeastrology", self.scrape_cafe_astrology),
-            ("tinybuddha", self.scrape_spiritual_wisdom),
-        ]
+        document_index = 0
         
-        for source_name, scrape_func in scraping_tasks:
-            print(f"\n📰 Scraping {source_name}...")
-            try:
-                document = scrape_func()
-                if document:
-                    # Upload to S3
-                    if self._upload_to_s3(document, today):
-                        results['scraped'].append(source_name)
-                        results['uploaded'] += 1
+        # Process each configured source
+        for source_config in sources:
+            print(f"\n{'='*60}")
+            print(f"📰 Source: {source_config.name} ({source_config.source_type})")
+            print(f"{'='*60}")
+            
+            # Get all URLs for this source (1 or 12 depending on type)
+            urls_to_scrape = source_config.get_urls()
+            print(f"   URLs to scrape: {len(urls_to_scrape)}")
+            
+            for url_info in urls_to_scrape:
+                url = url_info['url']
+                context = url_info['context']
+                
+                print(f"\n   → {context}: {url}")
+                
+                try:
+                    # Scrape this URL
+                    document = self.scrape_source(
+                        source_name=source_config.name,
+                        url=url,
+                        prompt=source_config.extraction_prompt,
+                        context=context,
+                    )
+                    
+                    if document:
+                        # Upload to S3
+                        if self._upload_to_s3(document, today, document_index):
+                            results['scraped'].append(f"{source_config.name}_{context}")
+                            results['uploaded'] += 1
+                            document_index += 1
+                        else:
+                            results['failed'].append(f"{source_config.name}_{context}")
                     else:
-                        results['failed'].append(source_name)
-                else:
-                    results['failed'].append(source_name)
-            except Exception as e:
-                print(f"❌ Error scraping {source_name}: {e}")
-                results['failed'].append(source_name)
+                        results['failed'].append(f"{source_config.name}_{context}")
+                        
+                except Exception as e:
+                    print(f"      ❌ Error: {e}")
+                    results['failed'].append(f"{source_config.name}_{context}")
         
         # Sync Knowledge Base with new data
         if results['uploaded'] > 0:
@@ -215,8 +226,10 @@ class DailyScraper:
         
         print("\n" + "=" * 60)
         print(f"✅ Daily scrape complete!")
-        print(f"   Scraped: {len(results['scraped'])}")
+        print(f"   Total attempted: {results['total']}")
+        print(f"   Successfully scraped: {len(results['scraped'])}")
         print(f"   Failed: {len(results['failed'])}")
-        print(f"   Uploaded: {results['uploaded']}")
+        print(f"   Uploaded to S3: {results['uploaded']}")
+        print(f"   Success rate: {int((results['uploaded'] / results['total']) * 100)}%")
         
         return results
