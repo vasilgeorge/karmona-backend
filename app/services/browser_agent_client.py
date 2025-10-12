@@ -10,6 +10,7 @@ import asyncio
 from bedrock_agentcore.tools.browser_client import BrowserClient
 from browser_use import Agent
 from browser_use.browser.session import BrowserSession
+from browser_use.browser import BrowserProfile
 from langchain_aws import ChatBedrockConverse
 
 from app.core.config import settings
@@ -31,9 +32,8 @@ class BrowserAgentClient:
     def _create_llm(self) -> ChatBedrockConverse:
         """Create Bedrock LLM for browser agent."""
         return ChatBedrockConverse(
-            model="us.anthropic.claude-3-5-sonnet-20241022-v2:0",  # Use inference profile
+            model_id="us.anthropic.claude-3-5-sonnet-20241022-v2:0",  # Use inference profile
             region_name=self.region,
-            credentials_profile_name=None,  # Use default credentials
         )
     
     @asynccontextmanager
@@ -52,12 +52,21 @@ class BrowserAgentClient:
             # Get WebSocket URL and headers for browser connection
             ws_url, headers = self.browser_client.generate_ws_headers()
             
+            # Create browser profile with headers
+            browser_profile = BrowserProfile(
+                headers=headers,
+                timeout=150000,  # 150 seconds timeout
+            )
+            
             # Create browser session connected to AgentCore browser
             session = BrowserSession(
-                headless=True,  # Run without GUI
                 cdp_url=ws_url,
-                cdp_headers=headers,
+                browser_profile=browser_profile,
+                keep_alive=True,  # Keep browser alive between tasks
             )
+            
+            # Initialize the session
+            await session.start()
             
             yield session
             
@@ -87,12 +96,16 @@ class BrowserAgentClient:
             # Create LLM for agent
             llm = self._create_llm()
             
+            # Include starting URL in task if provided
+            full_task = task
+            if starting_url:
+                full_task = f"Go to {starting_url} and then: {task}"
+            
             # Create browser agent with task
             agent = Agent(
-                task=task,
+                task=full_task,
                 llm=llm,
                 browser_session=browser_session,
-                starting_url=starting_url,
             )
             
             # Execute task
@@ -139,4 +152,3 @@ class BrowserAgentClient:
                 task=extraction_prompt,
                 starting_url=url,
             )
-

@@ -127,4 +127,3 @@ class AstrologyDataFetcher:
             return "Real-time astrology data temporarily unavailable."
         
         return "\n\n".join(context_parts)
-

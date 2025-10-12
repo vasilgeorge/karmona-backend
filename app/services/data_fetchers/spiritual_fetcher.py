@@ -134,4 +134,3 @@ class SpiritualDataFetcher:
             return "Spiritual context temporarily unavailable."
         
         return "\n\n".join(context_parts)
-
