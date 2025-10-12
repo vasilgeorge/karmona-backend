@@ -3,14 +3,13 @@ Script to manually run daily scraping job.
 Use this to test the scraping pipeline.
 """
 
-import asyncio
 import sys
 sys.path.insert(0, '/Users/georgiosvasilakis/src/karmona-backend')
 
 from app.services.daily_scraper import DailyScraper
 
 
-async def main():
+def main():
     """Run the daily scraping job."""
     print("🌅 KARMONA DAILY ASTROLOGY SCRAPER")
     print("=" * 60)
@@ -22,7 +21,7 @@ async def main():
     print()
     
     scraper = DailyScraper()
-    results = await scraper.run_daily_scrape()
+    results = scraper.run_daily_scrape()
     
     print("\n" + "=" * 60)
     print("📊 FINAL RESULTS:")
@@ -35,5 +34,5 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
 

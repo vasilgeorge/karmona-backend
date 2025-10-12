@@ -34,7 +34,7 @@ class DailyScraper:
             aws_secret_access_key=settings.aws_secret_access_key,
         )
     
-    async def scrape_nypost_astrology(self) -> Dict[str, Any]:
+    def scrape_nypost_astrology(self) -> Dict[str, Any]:
         """Scrape NY Post astrology section."""
         result = self.browser_scraper.fetch_and_extract(
             url="https://nypost.com/astrology/",
@@ -58,7 +58,7 @@ class DailyScraper:
             }
         return None
     
-    async def scrape_cafe_astrology(self) -> Dict[str, Any]:
+    def scrape_cafe_astrology(self) -> Dict[str, Any]:
         """Scrape Cafe Astrology daily aspects."""
         result = self.browser_scraper.fetch_and_extract(
             url="https://www.cafeastrology.com/",
@@ -82,7 +82,7 @@ class DailyScraper:
             }
         return None
     
-    async def scrape_spiritual_wisdom(self) -> Dict[str, Any]:
+    def scrape_spiritual_wisdom(self) -> Dict[str, Any]:
         """Scrape spiritual wisdom sites."""
         result = self.browser_scraper.fetch_and_extract(
             url="https://tinybuddha.com/",
@@ -166,7 +166,7 @@ class DailyScraper:
             print(f"❌ Failed to sync KB: {e}")
             return False
     
-    async def run_daily_scrape(self) -> Dict[str, Any]:
+    def run_daily_scrape(self) -> Dict[str, Any]:
         """
         Main method: Run full daily scraping pipeline.
         
@@ -184,17 +184,17 @@ class DailyScraper:
             "uploaded": 0,
         }
         
-        # Scrape all sources
+        # Scrape all sources (synchronously, one at a time)
         scraping_tasks = [
-            ("nypost", self.scrape_nypost_astrology()),
-            ("cafeastrology", self.scrape_cafe_astrology()),
-            ("tinybuddha", self.scrape_spiritual_wisdom()),
+            ("nypost", self.scrape_nypost_astrology),
+            ("cafeastrology", self.scrape_cafe_astrology),
+            ("tinybuddha", self.scrape_spiritual_wisdom),
         ]
         
-        for source_name, task in scraping_tasks:
+        for source_name, scrape_func in scraping_tasks:
             print(f"\n📰 Scraping {source_name}...")
             try:
-                document = await task
+                document = scrape_func()
                 if document:
                     # Upload to S3
                     if self._upload_to_s3(document, today):
