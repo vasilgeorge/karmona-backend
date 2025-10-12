@@ -39,8 +39,9 @@ class BrowserScraper:
             aws_secret_access_key=settings.aws_secret_access_key,
         )
         
+        # Use Nova Micro for extraction (much cheaper than Claude)
         return ChatBedrock(
-            model_id="us.anthropic.claude-3-5-sonnet-20241022-v2:0",
+            model_id="us.amazon.nova-micro-v1:0",  # ~100x cheaper than Claude!
             client=bedrock_client,
         )
     
@@ -89,9 +90,9 @@ class BrowserScraper:
                         )
                         page = context.pages[0] if context.pages else context.new_page()
                         
-                        # Navigate to URL
+                        # Navigate to URL (with generous timeout for slow sites)
                         print(f"🌐 Navigating to: {url}")
-                        page.goto(url, timeout=20000)
+                        page.goto(url, timeout=40000, wait_until="domcontentloaded")  # 40s timeout, faster load
                         time.sleep(wait_seconds)
                         
                         # Extract page content

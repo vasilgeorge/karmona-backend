@@ -220,4 +220,3 @@ class DailyScraper:
         print(f"   Uploaded: {results['uploaded']}")
         
         return results
-
