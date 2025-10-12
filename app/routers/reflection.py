@@ -13,6 +13,31 @@ from app.services import SupabaseService, AstrologyService, BedrockService
 router = APIRouter(prefix="/reflection", tags=["reflection"])
 
 
+@router.get("/today", response_model=ReflectionResponse | None)
+async def get_today_reflection(user_id: CurrentUserId) -> ReflectionResponse | None:
+    """
+    Get today's reflection if it exists, otherwise return None.
+    """
+    try:
+        supabase_service = SupabaseService()
+        today = date.today()
+        
+        existing_report = await supabase_service.get_report_by_date(user_id, today)
+        
+        if existing_report:
+            return ReflectionResponse(
+                karma_score=existing_report.karma_score,
+                reading=existing_report.reading,
+                rituals=existing_report.rituals,
+                report_id=existing_report.id,
+                created_at=existing_report.created_at,
+            )
+        
+        return None
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch reflection: {str(e)}")
+
+
 @router.post("/generate", response_model=ReflectionResponse)
 async def generate_reflection(
     request: DailyInputRequest,
