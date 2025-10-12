@@ -51,9 +51,15 @@ class BedrockService:
         )
 
         try:
-            # Call Bedrock with Claude
+            # Call Bedrock with Claude (using inference profile for cross-region routing)
+            # Use inference profile instead of direct model ID
+            model_id = settings.bedrock_model_id
+            # If using old direct model ID, convert to inference profile
+            if model_id == "anthropic.claude-3-5-sonnet-20241022-v2:0":
+                model_id = "us.anthropic.claude-3-5-sonnet-20241022-v2:0"
+            
             response = self.bedrock_runtime.invoke_model(
-                modelId=settings.bedrock_model_id,
+                modelId=model_id,
                 body=json.dumps(
                     {
                         "anthropic_version": "bedrock-2023-05-31",
