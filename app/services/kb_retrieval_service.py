@@ -135,14 +135,25 @@ class KBRetrievalService:
             # Format chunks for Claude
             context_chunks = []
             for i, result in enumerate(retrieved_results, 1):
-                content = result['content']['text']
+                raw_content = result['content']['text']
                 score = result.get('score', 0)
                 
-                # Only include high-confidence results
-                if score > 0.5:
-                    context_chunks.append(f"Insight {i}: {content}")
+                print(f"   Chunk {i} score: {score:.3f}")
+                
+                # Include all results with score > 0.3 (lowered threshold)
+                if score > 0.3:
+                    # Parse the JSON to extract just the "content" field
+                    try:
+                        import json
+                        doc = json.loads(raw_content)
+                        clean_content = doc.get('content', raw_content)
+                        context_chunks.append(f"Insight {i}: {clean_content}")
+                    except:
+                        # If not JSON, use as-is
+                        context_chunks.append(f"Insight {i}: {raw_content}")
             
             if not context_chunks:
+                print("⚠️  All chunks filtered out (scores too low)")
                 return ""
             
             # Format as enriched context
@@ -158,4 +169,3 @@ Use these insights to personalize the reflection."""
             print(f"❌ KB retrieval error: {e}")
             # Return empty string on error (reflection will still work without it)
             return ""
-
