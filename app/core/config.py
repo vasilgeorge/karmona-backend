@@ -38,6 +38,10 @@ class Settings(BaseSettings):
     bedrock_agent_id: str | None = None
     bedrock_agent_alias_id: str | None = None
     bedrock_model_id: str = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+    
+    # Knowledge Base Settings
+    bedrock_knowledge_base_id: str = "ZDDIIWWBMV"
+    s3_astrology_bucket: str = "karmona-astrology-data-967392725523"
 
     # Supabase Settings
     supabase_url: str
