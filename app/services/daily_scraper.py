@@ -155,7 +155,7 @@ class DailyScraper:
         try:
             response = self.bedrock_agent.start_ingestion_job(
                 knowledgeBaseId=settings.bedrock_knowledge_base_id,
-                dataSourceId='karmona-astrology-data',  # Your data source name
+                dataSourceId=settings.bedrock_data_source_id,  # Use actual data source ID
             )
             
             ingestion_job_id = response['ingestionJob']['ingestionJobId']

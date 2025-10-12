@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     
     # Knowledge Base Settings
     bedrock_knowledge_base_id: str = "ZDDIIWWBMV"
+    bedrock_data_source_id: str = "GHIJ2U38LL"
     s3_astrology_bucket: str = "karmona-astrology-data-967392725523"
 
     # Supabase Settings
