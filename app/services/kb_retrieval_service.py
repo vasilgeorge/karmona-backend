@@ -147,10 +147,22 @@ class KBRetrievalService:
                         import json
                         doc = json.loads(raw_content)
                         clean_content = doc.get('content', raw_content)
+                        
+                        # Sanitize content - remove control characters that break JSON
+                        clean_content = (
+                            clean_content
+                            .replace('\n', ' ')  # Replace newlines with spaces
+                            .replace('\r', ' ')  # Replace carriage returns
+                            .replace('\t', ' ')  # Replace tabs
+                            .replace('  ', ' ')  # Collapse multiple spaces
+                            .strip()
+                        )
+                        
                         context_chunks.append(f"Insight {i}: {clean_content}")
                     except:
-                        # If not JSON, use as-is
-                        context_chunks.append(f"Insight {i}: {raw_content}")
+                        # If not JSON, use raw and sanitize
+                        sanitized = raw_content.replace('\n', ' ').replace('\r', ' ').replace('\t', ' ').strip()
+                        context_chunks.append(f"Insight {i}: {sanitized}")
             
             if not context_chunks:
                 print("⚠️  All chunks filtered out (scores too low)")

@@ -77,7 +77,25 @@ class BedrockService:
             content = response_body["content"][0]["text"]
 
             # Parse JSON from Claude's response
-            reflection_data = json.loads(content)
+            try:
+                reflection_data = json.loads(content)
+            except json.JSONDecodeError as e:
+                print(f"⚠️  JSON parse error: {e}")
+                print(f"   Attempting to fix control characters...")
+                
+                # Try to fix by escaping control characters
+                import re
+                # Remove actual control characters (ASCII 0-31 except tab/newline/return)
+                fixed_content = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F]', '', content)
+                
+                try:
+                    reflection_data = json.loads(fixed_content)
+                    print(f"   ✅ Fixed and parsed successfully")
+                except json.JSONDecodeError as e2:
+                    print(f"   ❌ Still failed: {e2}")
+                    # Log the problematic content for debugging
+                    print(f"   Content preview: {content[:500]}")
+                    raise
 
             return BedrockReflection(
                 karma_score=reflection_data["karma_score"],
@@ -107,6 +125,11 @@ You must respond ONLY with valid JSON in this exact format:
   "reading": "<3-4 intimate paragraphs with markdown formatting>",
   "rituals": ["<first personalized ritual>", "<second personalized ritual>"]
 }
+
+CRITICAL - JSON Rules:
+- Use \\n for line breaks in the reading (not literal newlines!)
+- Properly escape all special characters
+- Ensure the JSON is parseable
 
 IMPORTANT - Reading Format:
 - Use **bold** for emphasis on key cosmic themes or user's signs
