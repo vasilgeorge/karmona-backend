@@ -205,6 +205,14 @@ class DailyScraper:
                     )
                     
                     if document:
+                        # Print extracted content for inspection
+                        print(f"\n      📝 Extracted content:")
+                        print(f"      {'-' * 50}")
+                        content_preview = document['content'][:300] + "..." if len(document['content']) > 300 else document['content']
+                        print(f"      {content_preview}")
+                        print(f"      {'-' * 50}")
+                        print(f"      Full length: {len(document['content'])} chars")
+                        
                         # Upload to S3
                         if self._upload_to_s3(document, today, document_index):
                             results['scraped'].append(f"{source_config.name}_{context}")
