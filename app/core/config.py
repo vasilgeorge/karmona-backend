@@ -32,7 +32,7 @@ class Settings(BaseSettings):
         return [origin.strip() for origin in self.allowed_origins.split(",") if origin.strip()]
 
     # AWS Bedrock Settings
-    aws_region: str = "us-east-1"
+    aws_region: str = "us-east-2"  # Ohio region where model access is enabled
     aws_access_key_id: str | None = None
     aws_secret_access_key: str | None = None
     bedrock_agent_id: str | None = None
