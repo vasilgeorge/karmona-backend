@@ -4,6 +4,7 @@ User onboarding endpoints.
 
 from fastapi import APIRouter, HTTPException
 
+from app.core.auth import CurrentUserId
 from app.models.schemas import OnboardingRequest, OnboardingResponse
 from app.services import SupabaseService, AstrologyService
 
@@ -11,7 +12,10 @@ router = APIRouter(prefix="/onboarding", tags=["onboarding"])
 
 
 @router.post("/", response_model=OnboardingResponse)
-async def onboard_user(request: OnboardingRequest) -> OnboardingResponse:
+async def onboard_user(
+    request: OnboardingRequest,
+    user_id: CurrentUserId,  # Get authenticated user_id from JWT
+) -> OnboardingResponse:
     """
     Onboard a new user with their birth information.
     Calculates zodiac signs and stores in database.
@@ -28,7 +32,7 @@ async def onboard_user(request: OnboardingRequest) -> OnboardingResponse:
             birth_place=request.birth_place,
         )
 
-        # Create user in database
+        # Create user in database with authenticated user_id from JWT
         user = await supabase_service.create_user(
             name=request.name,
             email=request.email,
@@ -37,6 +41,7 @@ async def onboard_user(request: OnboardingRequest) -> OnboardingResponse:
             birth_place=request.birth_place,
             sun_sign=astrology_data.sun_sign,
             moon_sign=astrology_data.moon_sign,
+            user_id=user_id,  # Use the auth user_id from JWT token
         )
 
         return OnboardingResponse(

@@ -29,6 +29,7 @@ class SupabaseService:
         birth_place: str | None,
         sun_sign: str,
         moon_sign: str | None,
+        user_id: str | None = None,
     ) -> UserProfile:
         """Create a new user in the database."""
         data = {
@@ -40,6 +41,10 @@ class SupabaseService:
             "sun_sign": sun_sign,
             "moon_sign": moon_sign,
         }
+        
+        # If user_id is provided (from auth), use it
+        if user_id:
+            data["id"] = user_id
 
         response = self.client.table("users").insert(data).execute()
 
