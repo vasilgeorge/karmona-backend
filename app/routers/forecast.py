@@ -44,7 +44,26 @@ async def get_weekly_forecast(user_id: CurrentUserId) -> WeeklyForecastResponse:
         week_start = today - timedelta(days=days_since_sunday)
         week_end = week_start + timedelta(days=6)
         
-        # Generate weekly forecast using Claude
+        # Check if forecast already exists for this week
+        existing_forecast = supabase_service.client.table("weekly_forecasts").select("*").eq(
+            "user_id", user_id
+        ).eq(
+            "week_start", week_start.isoformat()
+        ).execute()
+        
+        if existing_forecast.data and len(existing_forecast.data) > 0:
+            # Return cached forecast
+            cached = existing_forecast.data[0]
+            print(f"✅ Returning cached forecast for week {week_start}")
+            return WeeklyForecastResponse(
+                forecast=cached["forecast"],
+                sun_sign=cached["sun_sign"],
+                week_start=cached["week_start"],
+                week_end=cached["week_end"],
+            )
+        
+        # Generate new weekly forecast using Claude
+        print(f"🤖 Generating new forecast for {user.sun_sign}, week {week_start}")
         prompt = f"""Generate a weekly astrological forecast for a {user.sun_sign} sun sign.
 
 Week: {week_start.strftime('%B %d')} - {week_end.strftime('%B %d, %Y')}
@@ -81,6 +100,20 @@ Focus on how their {user.sun_sign} energy can best navigate this week."""
         
         response_body = json.loads(response["body"].read())
         forecast_text = response_body["content"][0]["text"]
+        
+        # Store in database for caching
+        try:
+            supabase_service.client.table("weekly_forecasts").insert({
+                "user_id": user_id,
+                "sun_sign": user.sun_sign,
+                "week_start": week_start.isoformat(),
+                "week_end": week_end.isoformat(),
+                "forecast": forecast_text,
+            }).execute()
+            print(f"✅ Cached forecast in database")
+        except Exception as db_error:
+            print(f"⚠️  Failed to cache forecast: {db_error}")
+            # Continue anyway, forecast was generated
         
         return WeeklyForecastResponse(
             forecast=forecast_text,
