@@ -84,16 +84,20 @@ async def generate_reflection(
         # NEW: Get zodiac element for KB search
         zodiac_element = astrology_service.get_zodiac_element(user.sun_sign)
         
-        # NEW: Retrieve enriched context from Knowledge Base
+        # NEW: Retrieve enriched context from Knowledge Base (with timeout)
         print(f"🔍 Retrieving KB context for {user.sun_sign}...")
-        enriched_context = await kb_retrieval_service.retrieve_context(
-            sun_sign=user.sun_sign,
-            moon_sign=user.moon_sign,
-            mood=request.mood,
-            actions=request.actions,
-            zodiac_element=zodiac_element,
-            max_results=5,
-        )
+        try:
+            enriched_context = await kb_retrieval_service.retrieve_context(
+                sun_sign=user.sun_sign,
+                moon_sign=user.moon_sign,
+                mood=request.mood,
+                actions=request.actions,
+                zodiac_element=zodiac_element,
+                max_results=5,
+            )
+        except Exception as kb_error:
+            print(f"⚠️  KB retrieval failed: {kb_error}, continuing without enriched context")
+            enriched_context = ""  # Continue without KB data if it fails
 
         # Generate reflection via Bedrock with enriched KB data
         bedrock_reflection = await bedrock_service.generate_reflection(
