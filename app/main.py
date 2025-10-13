@@ -21,6 +21,7 @@ from app.routers import (
     account_router,
     forecast_router,
     friends_router,
+    tarot_router,
 )
 
 
@@ -83,6 +84,7 @@ app.include_router(summary_router, prefix=settings.api_v1_prefix)
 app.include_router(account_router, prefix=settings.api_v1_prefix)
 app.include_router(forecast_router, prefix=settings.api_v1_prefix)
 app.include_router(friends_router, prefix=settings.api_v1_prefix)
+app.include_router(tarot_router, prefix=settings.api_v1_prefix)
 
 
 if __name__ == "__main__":

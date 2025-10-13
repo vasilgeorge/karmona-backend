@@ -1,0 +1,223 @@
+[
+  {
+    "id": 0,
+    "name": "The Fool",
+    "arcana": "major",
+    "number": 0,
+    "upright_meaning": "New beginnings, innocence, spontaneity, free spirit",
+    "reversed_meaning": "Recklessness, taken advantage of, inconsideration",
+    "keywords": ["adventure", "potential", "leap of faith", "naivety"],
+    "image": "00-fool.jpg"
+  },
+  {
+    "id": 1,
+    "name": "The Magician",
+    "arcana": "major",
+    "number": 1,
+    "upright_meaning": "Manifestation, resourcefulness, power, inspired action",
+    "reversed_meaning": "Manipulation, poor planning, untapped talents",
+    "keywords": ["skill", "will", "manifestation", "power"],
+    "image": "01-magician.jpg"
+  },
+  {
+    "id": 2,
+    "name": "The High Priestess",
+    "arcana": "major",
+    "number": 2,
+    "upright_meaning": "Intuition, sacred knowledge, divine feminine, subconscious",
+    "reversed_meaning": "Secrets, disconnected from intuition, withdrawal",
+    "keywords": ["intuition", "mystery", "inner voice", "wisdom"],
+    "image": "02-high-priestess.jpg"
+  },
+  {
+    "id": 3,
+    "name": "The Empress",
+    "arcana": "major",
+    "number": 3,
+    "upright_meaning": "Femininity, beauty, nature, nurturing, abundance",
+    "reversed_meaning": "Creative block, dependence on others",
+    "keywords": ["fertility", "abundance", "nature", "nurturing"],
+    "image": "03-empress.jpg"
+  },
+  {
+    "id": 4,
+    "name": "The Emperor",
+    "arcana": "major",
+    "number": 4,
+    "upright_meaning": "Authority, establishment, structure, father figure",
+    "reversed_meaning": "Domination, excessive control, lack of discipline",
+    "keywords": ["authority", "structure", "control", "leadership"],
+    "image": "04-emperor.jpg"
+  },
+  {
+    "id": 5,
+    "name": "The Hierophant",
+    "arcana": "major",
+    "number": 5,
+    "upright_meaning": "Spiritual wisdom, religious beliefs, tradition, conformity",
+    "reversed_meaning": "Personal beliefs, freedom, challenging the status quo",
+    "keywords": ["tradition", "conformity", "morality", "ethics"],
+    "image": "05-hierophant.jpg"
+  },
+  {
+    "id": 6,
+    "name": "The Lovers",
+    "arcana": "major",
+    "number": 6,
+    "upright_meaning": "Love, harmony, relationships, values alignment, choices",
+    "reversed_meaning": "Self-love, disharmony, imbalance, misalignment",
+    "keywords": ["love", "union", "choice", "harmony"],
+    "image": "06-lovers.jpg"
+  },
+  {
+    "id": 7,
+    "name": "The Chariot",
+    "arcana": "major",
+    "number": 7,
+    "upright_meaning": "Control, willpower, success, determination, direction",
+    "reversed_meaning": "Self-discipline, opposition, lack of direction",
+    "keywords": ["victory", "willpower", "determination", "action"],
+    "image": "07-chariot.jpg"
+  },
+  {
+    "id": 8,
+    "name": "Strength",
+    "arcana": "major",
+    "number": 8,
+    "upright_meaning": "Inner strength, courage, patience, compassion, soft power",
+    "reversed_meaning": "Self doubt, weakness, insecurity",
+    "keywords": ["courage", "patience", "compassion", "influence"],
+    "image": "08-strength.jpg"
+  },
+  {
+    "id": 9,
+    "name": "The Hermit",
+    "arcana": "major",
+    "number": 9,
+    "upright_meaning": "Soul searching, introspection, inner guidance, solitude",
+    "reversed_meaning": "Isolation, loneliness, withdrawal",
+    "keywords": ["wisdom", "solitude", "introspection", "guidance"],
+    "image": "09-hermit.jpg"
+  },
+  {
+    "id": 10,
+    "name": "Wheel of Fortune",
+    "arcana": "major",
+    "number": 10,
+    "upright_meaning": "Good luck, karma, life cycles, destiny, turning point",
+    "reversed_meaning": "Bad luck, resistance to change, breaking cycles",
+    "keywords": ["fate", "change", "cycles", "karma"],
+    "image": "10-wheel-of-fortune.jpg"
+  },
+  {
+    "id": 11,
+    "name": "Justice",
+    "arcana": "major",
+    "number": 11,
+    "upright_meaning": "Justice, fairness, truth, cause and effect, law",
+    "reversed_meaning": "Unfairness, lack of accountability, dishonesty",
+    "keywords": ["balance", "truth", "fairness", "law"],
+    "image": "11-justice.jpg"
+  },
+  {
+    "id": 12,
+    "name": "The Hanged Man",
+    "arcana": "major",
+    "number": 12,
+    "upright_meaning": "Pause, surrender, letting go, new perspectives",
+    "reversed_meaning": "Delays, resistance, stalling, indecision",
+    "keywords": ["sacrifice", "perspective", "surrender", "waiting"],
+    "image": "12-hanged-man.jpg"
+  },
+  {
+    "id": 13,
+    "name": "Death",
+    "arcana": "major",
+    "number": 13,
+    "upright_meaning": "Endings, change, transformation, transition",
+    "reversed_meaning": "Resistance to change, personal transformation, inner purging",
+    "keywords": ["transformation", "endings", "rebirth", "transition"],
+    "image": "13-death.jpg"
+  },
+  {
+    "id": 14,
+    "name": "Temperance",
+    "arcana": "major",
+    "number": 14,
+    "upright_meaning": "Balance, moderation, patience, purpose, meaning",
+    "reversed_meaning": "Imbalance, excess, self-healing, re-alignment",
+    "keywords": ["balance", "moderation", "harmony", "patience"],
+    "image": "14-temperance.jpg"
+  },
+  {
+    "id": 15,
+    "name": "The Devil",
+    "arcana": "major",
+    "number": 15,
+    "upright_meaning": "Shadow self, attachment, addiction, restriction",
+    "reversed_meaning": "Release, restoring control, detachment",
+    "keywords": ["bondage", "materialism", "temptation", "restriction"],
+    "image": "15-devil.jpg"
+  },
+  {
+    "id": 16,
+    "name": "The Tower",
+    "arcana": "major",
+    "number": 16,
+    "upright_meaning": "Sudden change, upheaval, chaos, revelation, awakening",
+    "reversed_meaning": "Personal transformation, fear of change, averting disaster",
+    "keywords": ["upheaval", "revelation", "chaos", "awakening"],
+    "image": "16-tower.jpg"
+  },
+  {
+    "id": 17,
+    "name": "The Star",
+    "arcana": "major",
+    "number": 17,
+    "upright_meaning": "Hope, faith, purpose, renewal, spirituality",
+    "reversed_meaning": "Lack of faith, despair, self-trust, disconnection",
+    "keywords": ["hope", "inspiration", "serenity", "renewal"],
+    "image": "17-star.jpg"
+  },
+  {
+    "id": 18,
+    "name": "The Moon",
+    "arcana": "major",
+    "number": 18,
+    "upright_meaning": "Illusion, fear, anxiety, subconscious, intuition",
+    "reversed_meaning": "Release of fear, repressed emotion, inner confusion",
+    "keywords": ["illusion", "intuition", "dreams", "unconscious"],
+    "image": "18-moon.jpg"
+  },
+  {
+    "id": 19,
+    "name": "The Sun",
+    "arcana": "major",
+    "number": 19,
+    "upright_meaning": "Positivity, fun, warmth, success, vitality",
+    "reversed_meaning": "Inner child, feeling down, overly optimistic",
+    "keywords": ["joy", "success", "vitality", "confidence"],
+    "image": "19-sun.jpg"
+  },
+  {
+    "id": 20,
+    "name": "Judgement",
+    "arcana": "major",
+    "number": 20,
+    "upright_meaning": "Judgement, rebirth, inner calling, absolution",
+    "reversed_meaning": "Self-doubt, inner critic, ignoring the call",
+    "keywords": ["rebirth", "reflection", "awakening", "reckoning"],
+    "image": "20-judgement.jpg"
+  },
+  {
+    "id": 21,
+    "name": "The World",
+    "arcana": "major",
+    "number": 21,
+    "upright_meaning": "Completion, accomplishment, travel, fulfillment",
+    "reversed_meaning": "Seeking closure, short-cuts, delays",
+    "keywords": ["completion", "achievement", "fulfillment", "travel"],
+    "image": "21-world.jpg"
+  }
+]
+

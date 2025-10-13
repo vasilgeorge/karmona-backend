@@ -9,6 +9,7 @@ from .summary import router as summary_router
 from .account import router as account_router
 from .forecast import router as forecast_router
 from .friends import router as friends_router
+from .tarot import router as tarot_router
 
 __all__ = [
     "onboarding_router",
@@ -20,4 +21,5 @@ __all__ = [
     "account_router",
     "forecast_router",
     "friends_router",
+    "tarot_router",
 ]
