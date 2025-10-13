@@ -126,4 +126,3 @@ Use **bold** for the card name and key themes. Add 1 relevant emoji. Keep it dir
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Tarot reading failed: {str(e)}")
-
