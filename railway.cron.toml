@@ -1,0 +1,13 @@
+# Railway config for daily scraping cron job
+# This is for the impartial-blessing cron service
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+# Run the daily scraping script (NOT the API server)
+startCommand = "uv run python scripts/run_daily_scrape.py"
+# Cron services should NOT restart - they run once and exit
+restartPolicyType = "NEVER"
+
