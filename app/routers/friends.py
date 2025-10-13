@@ -60,6 +60,9 @@ async def get_friends(user_id: CurrentUserId) -> List[Friend]:
             "user_id", user_id
         ).order("created_at", desc=True).execute()
         
+        # Note: Could add has_report_today flag here by checking compatibility_reports table
+        # For now, frontend will check by trying to fetch (cached reports return instantly)
+        
         return [Friend(**friend) for friend in response.data]
         
     except Exception as e:
@@ -167,29 +170,27 @@ async def generate_compatibility_report(
         user_element = astrology_service.get_zodiac_element(user.sun_sign)
         friend_element = astrology_service.get_zodiac_element(friend["sun_sign"])
         
-        prompt = f"""Generate a compatibility analysis between two people:
+        # Relationship-specific prompts
+        relationship_prompts = {
+            'romantic': 'Focus on emotional connection, communication styles, and attraction dynamics.',
+            'professional': 'Focus on work styles, collaboration, and professional strengths.',
+            'friend': 'Focus on shared interests, communication, and how to support each other.',
+            'family': 'Focus on understanding differences, family dynamics, and patience.',
+            'acquaintance': 'Focus on first impressions and potential for deeper connection.',
+            'mentor': 'Focus on learning dynamic, guidance style, and growth opportunities.',
+        }
+        
+        context = relationship_prompts.get(friend['relationship_type'], 'Focus on how they interact and connect.')
+        
+        prompt = f"""Compatibility between **{user.sun_sign}** and **{friend['sun_sign']}** for a {friend['relationship_type']} relationship:
 
-**Person 1 ({user.name}):**
-- Sun: {user.sun_sign} ({user_element} element)
-- Moon: {user.moon_sign or 'Unknown'}
+{context}
 
-**Person 2 ({friend['nickname']}):**
-- Sun: {friend['sun_sign']} ({friend_element} element)  
-- Moon: {friend.get('moon_sign') or 'Unknown'}
-- Age: {friend.get('age') or 'Unknown'}
-- Location: {friend.get('current_location') or 'Unknown'}
+Write 2-3 SHORT sentences with actionable advice for TODAY ({today.strftime('%A')}):
+1. One key strength or dynamic between these signs
+2. One specific thing to do or avoid today
 
-**Relationship Type:** {friend['relationship_type']}
-
-**Today:** {today.strftime('%A, %B %d, %Y')}
-
-Write a warm, insightful compatibility analysis (2-3 paragraphs) that covers:
-1. **Overall compatibility** between these signs for a {friend['relationship_type']} relationship
-2. **Strengths** of this pairing - what works well
-3. **Today's energy** - how they can best interact today
-
-Use **bold** for signs and key themes, *italics* for gentle emphasis, and 1-2 emojis.
-Be encouraging and specific to the relationship type. Keep it practical and honest."""
+Use **bold** for signs, keep it direct and practical. Add 1 relevant emoji."""
         
         bedrock_runtime = boto3.client(
             "bedrock-runtime",
@@ -238,4 +239,3 @@ Be encouraging and specific to the relationship type. Keep it practical and hone
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Compatibility generation failed: {str(e)}")
-
