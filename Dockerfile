@@ -22,6 +22,7 @@ RUN uv sync --no-dev
 
 # Copy application code
 COPY app ./app
+COPY scripts ./scripts
 
 # Expose port
 EXPOSE 8000
