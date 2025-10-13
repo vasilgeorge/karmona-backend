@@ -6,6 +6,7 @@ from .history import router as history_router
 from .health import router as health_router
 from .waitlist import router as waitlist_router
 from .summary import router as summary_router
+from .account import router as account_router
 
 __all__ = [
     "onboarding_router",
@@ -14,4 +15,5 @@ __all__ = [
     "health_router",
     "waitlist_router",
     "summary_router",
+    "account_router",
 ]
