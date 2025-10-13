@@ -9,6 +9,7 @@ from typing import AsyncIterator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from apscheduler.schedulers.background import BackgroundScheduler
 
 from app.core.config import settings
 from app.routers import (
@@ -22,6 +23,21 @@ from app.routers import (
     forecast_router,
 )
 
+# Initialize background scheduler
+scheduler = BackgroundScheduler()
+
+
+def run_daily_scrape_job():
+    """Background job to scrape astrology sites daily."""
+    try:
+        from app.services.daily_scraper import DailyScraper
+        print("🌅 Running scheduled daily scrape...")
+        scraper = DailyScraper()
+        results = scraper.run_daily_scrape()
+        print(f"✅ Scheduled scrape complete: {results['uploaded']}/{results['total']} uploaded")
+    except Exception as e:
+        print(f"❌ Scheduled scrape failed: {e}")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -30,10 +46,23 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     print(f"🌙 Starting {settings.app_name} v{settings.app_version}")
     print(f"📍 API prefix: {settings.api_v1_prefix}")
     print(f"🔧 Debug mode: {settings.debug}")
+    
+    # Start daily scraping cron job (3am UTC daily)
+    scheduler.add_job(
+        run_daily_scrape_job,
+        'cron',
+        hour=3,
+        minute=0,
+        id='daily_astrology_scrape',
+        replace_existing=True
+    )
+    scheduler.start()
+    print("⏰ Daily scraper scheduled for 3:00 AM UTC")
 
     yield
 
     # Shutdown
+    scheduler.shutdown()
     print("👋 Shutting down Karmona API")
 
 
