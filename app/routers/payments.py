@@ -293,15 +293,26 @@ async def stripe_webhook(
             
             # Update user subscription status
             from datetime import datetime
-            period_end_timestamp = subscription["current_period_end"]
-            period_end_dt = datetime.fromtimestamp(period_end_timestamp)
+            
+            # Get period end from subscription items (new API structure)
+            period_end_timestamp = None
+            if subscription.get("items") and subscription["items"]["data"]:
+                period_end_timestamp = subscription["items"]["data"][0].get("current_period_end")
+            
+            # Fallback to direct field if exists (old API)
+            if not period_end_timestamp:
+                period_end_timestamp = subscription.get("current_period_end")
             
             update_data = {
                 "stripe_subscription_id": subscription["id"],
                 "subscription_status": subscription["status"],
                 "subscription_tier": "premium" if subscription["status"] == "active" else "free",
-                "subscription_period_end": period_end_dt.isoformat(),
             }
+            
+            # Add period end if available
+            if period_end_timestamp:
+                period_end_dt = datetime.fromtimestamp(period_end_timestamp)
+                update_data["subscription_period_end"] = period_end_dt.isoformat()
             
             result = supabase_service.client.table("users").update(update_data).eq(
                 "id", user_id
