@@ -62,6 +62,12 @@ class SupabaseService:
             sun_sign=user_data["sun_sign"],
             moon_sign=user_data.get("moon_sign"),
             created_at=datetime.fromisoformat(user_data["created_at"]),
+            # Stripe subscription fields
+            stripe_customer_id=user_data.get("stripe_customer_id"),
+            subscription_status=user_data.get("subscription_status", "free"),
+            subscription_tier=user_data.get("subscription_tier", "free"),
+            stripe_subscription_id=user_data.get("stripe_subscription_id"),
+            subscription_period_end=datetime.fromisoformat(user_data["subscription_period_end"].replace("Z", "+00:00")) if user_data.get("subscription_period_end") else None,
         )
 
     async def get_user(self, user_id: str) -> UserProfile | None:
@@ -82,6 +88,12 @@ class SupabaseService:
             sun_sign=user_data["sun_sign"],
             moon_sign=user_data.get("moon_sign"),
             created_at=datetime.fromisoformat(user_data["created_at"]),
+            # Stripe subscription fields
+            stripe_customer_id=user_data.get("stripe_customer_id"),
+            subscription_status=user_data.get("subscription_status", "free"),
+            subscription_tier=user_data.get("subscription_tier", "free"),
+            stripe_subscription_id=user_data.get("stripe_subscription_id"),
+            subscription_period_end=datetime.fromisoformat(user_data["subscription_period_end"].replace("Z", "+00:00")) if user_data.get("subscription_period_end") else None,
         )
 
     async def create_daily_report(
