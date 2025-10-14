@@ -5,6 +5,7 @@ Provides AI-powered guidance for user decisions based on their astrological prof
 and current state.
 """
 
+import json
 from datetime import datetime, date, timedelta
 from typing import Optional, List
 from uuid import UUID
@@ -126,22 +127,26 @@ Provide clear, practical guidance in 3-4 sentences:
 
 Be warm, wise, and actionable. Focus on empowerment, not predictions."""
 
-        response = await bedrock_service.client.invoke_model(
+        # Use Bedrock to generate guidance
+        body = json.dumps({
+            "anthropic_version": "bedrock-2023-05-31",
+            "max_tokens": 400,
+            "temperature": 0.7,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        })
+        
+        response = bedrock_service.bedrock_runtime.invoke_model(
             modelId="anthropic.claude-3-5-sonnet-20241022-v2:0",
-            body={
-                "anthropic_version": "bedrock-2023-05-31",
-                "max_tokens": 400,
-                "temperature": 0.7,
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ]
-            }
+            body=body
         )
         
-        answer = response["content"][0]["text"].strip()
+        response_body = json.loads(response['body'].read())
+        answer = response_body["content"][0]["text"].strip()
         
         # Store in database
         data = {
