@@ -38,6 +38,13 @@ async def get_weekly_forecast(user_id: CurrentUserId) -> WeeklyForecastResponse:
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         
+        # Check if user is premium (PREMIUM ONLY FEATURE)
+        if user.subscription_tier != "premium" or user.subscription_status != "active":
+            raise HTTPException(
+                status_code=403,
+                detail="Weekly Forecast is a premium feature. Upgrade to access personalized weekly guidance."
+            )
+        
         # Calculate current week (Sunday to Saturday)
         today = date.today()
         days_since_sunday = (today.weekday() + 1) % 7

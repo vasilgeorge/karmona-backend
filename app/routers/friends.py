@@ -74,9 +74,29 @@ async def add_friend(
     request: AddFriendRequest,
     user_id: CurrentUserId,
 ) -> Friend:
-    """Add a new friend."""
+    """Add a new friend. Free users limited to 3, premium unlimited."""
     try:
         supabase_service = SupabaseService()
+        
+        # Get user to check subscription
+        user = await supabase_service.get_user(user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Check limits for free users
+        is_premium = (user.subscription_tier == "premium" and user.subscription_status == "active")
+        
+        if not is_premium:
+            # Count existing friends
+            existing_friends = supabase_service.client.table("friends").select("id").eq(
+                "user_id", str(user_id)
+            ).execute()
+            
+            if len(existing_friends.data) >= 3:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Free tier limited to 3 connections. Upgrade to premium for unlimited connections."
+                )
         
         friend_data = {
             "user_id": user_id,

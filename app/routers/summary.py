@@ -37,6 +37,18 @@ async def generate_journey_summary(
         supabase_service = SupabaseService()
         bedrock_service = BedrockService()
         
+        # Get user
+        user = await supabase_service.get_user(user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Check if user is premium (PREMIUM ONLY FEATURE)
+        if user.subscription_tier != "premium" or user.subscription_status != "active":
+            raise HTTPException(
+                status_code=403,
+                detail="Journey summaries are a premium feature. Upgrade to unlock AI-powered pattern analysis."
+            )
+        
         # Get user's recent reflections
         reports = await supabase_service.get_user_history(user_id, limit=days)
         
