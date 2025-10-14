@@ -94,6 +94,8 @@ async def create_checkout_session(
             user_id=str(user_id)
         )
         
+        print(f"✅ Created checkout session for user {user_id}, customer {stripe_customer_id}")
+        
         return CheckoutSessionResponse(checkout_url=session.url)
         
     except HTTPException:
@@ -183,16 +185,24 @@ async def sync_subscription(user_id: CurrentUserId):
             subscription = subscriptions.data[0]
             
             # Update user subscription status
+            from datetime import datetime
+            period_end_timestamp = subscription.current_period_end
+            period_end_dt = datetime.fromtimestamp(period_end_timestamp)
+            
             update_data = {
                 "stripe_subscription_id": subscription.id,
                 "subscription_status": subscription.status,
                 "subscription_tier": "premium" if subscription.status == "active" else "free",
-                "subscription_period_end": subscription.current_period_end,
+                "subscription_period_end": period_end_dt.isoformat(),
             }
             
-            supabase_service.client.table("users").update(update_data).eq(
+            print(f"💾 Updating user {user_id} with: {update_data}")
+            
+            result = supabase_service.client.table("users").update(update_data).eq(
                 "id", str(user_id)
             ).execute()
+            
+            print(f"✅ Sync complete. Updated data: {result.data}")
             
             return {"status": "synced", "subscription_status": subscription.status}
         else:
@@ -278,18 +288,23 @@ async def stripe_webhook(
                 return {"status": "ignored"}
             
             # Update user subscription status
+            from datetime import datetime
+            period_end_timestamp = subscription["current_period_end"]
+            period_end_dt = datetime.fromtimestamp(period_end_timestamp)
+            
             update_data = {
                 "stripe_subscription_id": subscription["id"],
                 "subscription_status": subscription["status"],
                 "subscription_tier": "premium" if subscription["status"] == "active" else "free",
-                "subscription_period_end": subscription["current_period_end"],
+                "subscription_period_end": period_end_dt.isoformat(),
             }
             
-            supabase_service.client.table("users").update(update_data).eq(
+            result = supabase_service.client.table("users").update(update_data).eq(
                 "id", user_id
             ).execute()
             
             print(f"✅ Updated user {user_id} subscription to {subscription['status']}")
+            print(f"   Update result: {result.data}")
         
         elif event["type"] == "invoice.payment_failed":
             # Handle failed payment
