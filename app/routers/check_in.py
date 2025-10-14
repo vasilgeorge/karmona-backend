@@ -12,7 +12,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from app.core.auth import CurrentUserId
-from app.services.supabase_service import supabase_service
+from app.services import SupabaseService
 
 router = APIRouter(prefix="/check-in", tags=["check-in"])
 
@@ -67,6 +67,7 @@ async def get_check_in_status(user_id: CurrentUserId) -> CheckInStatusResponse:
     - Last check-in was more than 24 hours ago
     """
     try:
+        supabase_service = SupabaseService()
         # Get most recent check-in
         result = await supabase_service.supabase.table("daily_check_ins").select("*").eq(
             "user_id", str(user_id)
@@ -113,6 +114,7 @@ async def submit_check_in(
 ) -> CheckInResponse:
     """Submit daily check-in"""
     try:
+        supabase_service = SupabaseService()
         today = date.today()
         
         # Check if already checked in today
@@ -162,6 +164,7 @@ async def get_latest_check_in(user_id: CurrentUserId) -> Optional[CheckInRespons
     Used to enrich AI-generated content with current wellness context.
     """
     try:
+        supabase_service = SupabaseService()
         result = await supabase_service.supabase.table("daily_check_ins").select("*").eq(
             "user_id", str(user_id)
         ).order("check_in_date", desc=True).limit(1).execute()
