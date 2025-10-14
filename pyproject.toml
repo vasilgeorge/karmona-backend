@@ -20,6 +20,7 @@ dependencies = [
     "bedrock-agentcore>=0.1.7",
     "browser-use<0.3.3",
     "langchain-aws>=0.2.6",
+    "stripe>=11.1.0",
 ]
 
 [project.optional-dependencies]

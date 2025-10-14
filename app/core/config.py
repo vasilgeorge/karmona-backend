@@ -52,6 +52,12 @@ class Settings(BaseSettings):
 
     # Astrology API Settings
     aztro_api_url: str = "https://aztro.sameerkumar.website"
+    
+    # Stripe Settings
+    stripe_secret_key: str
+    stripe_publishable_key: str
+    stripe_webhook_secret: str
+    stripe_premium_price_id: str  # Monthly premium subscription price ID
 
 
 # Global settings instance

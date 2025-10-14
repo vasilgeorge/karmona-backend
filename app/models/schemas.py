@@ -137,6 +137,13 @@ class UserProfile(BaseModel):
     sun_sign: str
     moon_sign: str | None = None
     created_at: datetime
+    
+    # Stripe subscription fields
+    stripe_customer_id: str | None = None
+    subscription_status: str = "free"
+    subscription_tier: str = "free"
+    stripe_subscription_id: str | None = None
+    subscription_period_end: datetime | None = None
 
 
 # ============================================================================

@@ -65,9 +65,11 @@ async def ask_question(
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         
-        # Check if user is premium (for now, all users are premium - implement later)
-        # TODO: Add premium check once Stripe is integrated
-        is_premium = True
+        # Check if user is premium
+        is_premium = (
+            user.subscription_tier == "premium" and 
+            user.subscription_status == "active"
+        )
         
         if not is_premium:
             raise HTTPException(
