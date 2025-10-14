@@ -69,7 +69,7 @@ async def get_check_in_status(user_id: CurrentUserId) -> CheckInStatusResponse:
     try:
         supabase_service = SupabaseService()
         # Get most recent check-in
-        result = await supabase_service.supabase.table("daily_check_ins").select("*").eq(
+        result = await supabase_service.client.table("daily_check_ins").select("*").eq(
             "user_id", str(user_id)
         ).order("check_in_date", desc=True).limit(1).execute()
         
@@ -118,7 +118,7 @@ async def submit_check_in(
         today = date.today()
         
         # Check if already checked in today
-        existing = await supabase_service.supabase.table("daily_check_ins").select("id").eq(
+        existing = await supabase_service.client.table("daily_check_ins").select("id").eq(
             "user_id", str(user_id)
         ).eq("check_in_date", today.isoformat()).execute()
         
@@ -144,7 +144,7 @@ async def submit_check_in(
             "check_in_date": today.isoformat(),
         }
         
-        result = await supabase_service.supabase.table("daily_check_ins").insert(data).execute()
+        result = await supabase_service.client.table("daily_check_ins").insert(data).execute()
         
         if not result.data:
             raise HTTPException(status_code=500, detail="Failed to save check-in")
@@ -165,7 +165,7 @@ async def get_latest_check_in(user_id: CurrentUserId) -> Optional[CheckInRespons
     """
     try:
         supabase_service = SupabaseService()
-        result = await supabase_service.supabase.table("daily_check_ins").select("*").eq(
+        result = await supabase_service.client.table("daily_check_ins").select("*").eq(
             "user_id", str(user_id)
         ).order("check_in_date", desc=True).limit(1).execute()
         
