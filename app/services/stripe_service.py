@@ -7,8 +7,9 @@ from typing import Optional
 
 from app.core.config import settings
 
-# Initialize Stripe with secret key
-stripe.api_key = settings.stripe_secret_key
+# Initialize Stripe with secret key (if configured)
+if settings.stripe_secret_key:
+    stripe.api_key = settings.stripe_secret_key
 
 
 class StripeService:

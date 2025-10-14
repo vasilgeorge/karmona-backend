@@ -49,6 +49,13 @@ async def create_checkout_session(
     Create a Stripe Checkout Session for premium subscription.
     """
     try:
+        # Check if Stripe is configured
+        if not settings.stripe_secret_key or not settings.stripe_premium_price_id:
+            raise HTTPException(
+                status_code=503,
+                detail="Payment system is being configured. Please check back soon!"
+            )
+        
         supabase_service = SupabaseService()
         stripe_service = StripeService()
         
