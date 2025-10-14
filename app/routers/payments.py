@@ -157,6 +157,85 @@ async def get_subscription_status(
         raise HTTPException(status_code=500, detail=f"Failed to get subscription status: {str(e)}")
 
 
+@router.post("/sync-subscription")
+async def sync_subscription(user_id: CurrentUserId):
+    """
+    Manually sync subscription status from Stripe.
+    Call this after checkout success to immediately update user status.
+    """
+    try:
+        if not settings.stripe_secret_key:
+            raise HTTPException(status_code=503, detail="Stripe not configured")
+        
+        supabase_service = SupabaseService()
+        stripe_service = StripeService()
+        
+        # Get user
+        user = await supabase_service.get_user(user_id)
+        if not user or not user.stripe_customer_id:
+            raise HTTPException(status_code=404, detail="No Stripe customer found")
+        
+        # Get customer's subscriptions from Stripe
+        import stripe
+        subscriptions = stripe.Subscription.list(customer=user.stripe_customer_id, limit=1)
+        
+        if subscriptions.data:
+            subscription = subscriptions.data[0]
+            
+            # Update user subscription status
+            update_data = {
+                "stripe_subscription_id": subscription.id,
+                "subscription_status": subscription.status,
+                "subscription_tier": "premium" if subscription.status == "active" else "free",
+                "subscription_period_end": subscription.current_period_end,
+            }
+            
+            supabase_service.client.table("users").update(update_data).eq(
+                "id", str(user_id)
+            ).execute()
+            
+            return {"status": "synced", "subscription_status": subscription.status}
+        else:
+            # No active subscription
+            supabase_service.client.table("users").update({
+                "subscription_status": "free",
+                "subscription_tier": "free",
+            }).eq("id", str(user_id)).execute()
+            
+            return {"status": "synced", "subscription_status": "free"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to sync subscription: {str(e)}")
+
+
+@router.post("/cancel-subscription")
+async def cancel_subscription(user_id: CurrentUserId):
+    """Cancel user's subscription (at period end)"""
+    try:
+        if not settings.stripe_secret_key:
+            raise HTTPException(status_code=503, detail="Stripe not configured")
+        
+        supabase_service = SupabaseService()
+        stripe_service = StripeService()
+        
+        # Get user
+        user = await supabase_service.get_user(user_id)
+        if not user or not user.stripe_subscription_id:
+            raise HTTPException(status_code=404, detail="No active subscription found")
+        
+        # Cancel subscription at period end
+        stripe_service.cancel_subscription(user.stripe_subscription_id)
+        
+        return {"status": "cancelled", "message": "Subscription will cancel at period end"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to cancel subscription: {str(e)}")
+
+
 @router.post("/webhook")
 async def stripe_webhook(
     request: Request,
