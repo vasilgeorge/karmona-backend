@@ -141,7 +141,7 @@ Be warm, wise, and actionable. Focus on empowerment, not predictions."""
         })
         
         response = bedrock_service.bedrock_runtime.invoke_model(
-            modelId="anthropic.claude-3-5-sonnet-20241022-v2:0",
+            modelId="us.anthropic.claude-3-5-sonnet-20241022-v2:0",  # Use inference profile
             body=body
         )
         
