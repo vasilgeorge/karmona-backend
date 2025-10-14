@@ -168,9 +168,9 @@ async def generate_reflection(
             name=user.name,
             sun_sign=user.sun_sign,
             moon_sign=user.moon_sign,
-            mood=request.mood,
-            actions=request.actions,
-            note=request.note,
+            mood=mood,
+            actions=actions,
+            note=note,
             horoscope=horoscope,
             enriched_context=enriched_context,  # NEW: KB-enhanced data
             today=today,
@@ -180,12 +180,12 @@ async def generate_reflection(
         report = await supabase_service.create_daily_report(
             user_id=user_id,
             report_date=today,
-            mood=request.mood,
-            actions=request.actions,
+            mood=mood,
+            actions=actions,
             karma_score=bedrock_reflection.karma_score,
             reading=bedrock_reflection.reading,
             rituals=bedrock_reflection.rituals,
-            note=request.note,
+            note=note,
         )
 
         return ReflectionResponse(
