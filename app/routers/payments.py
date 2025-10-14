@@ -80,10 +80,14 @@ async def create_checkout_session(
             )
             stripe_customer_id = customer.id
             
+            print(f"📝 Created Stripe customer {stripe_customer_id} for user {user_id}")
+            
             # Update user with Stripe customer ID
-            supabase_service.client.table("users").update({
+            result = supabase_service.client.table("users").update({
                 "stripe_customer_id": stripe_customer_id
             }).eq("id", str(user_id)).execute()
+            
+            print(f"💾 Saved customer ID to database: {result.data}")
         
         # Create checkout session
         session = stripe_service.create_checkout_session(
