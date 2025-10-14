@@ -77,6 +77,70 @@ async def generate_reflection(
                 report_id=existing_report.id,
                 created_at=existing_report.created_at,
             )
+        
+        # If mood/actions not provided, fetch from daily check-in
+        mood = request.mood
+        actions = request.actions
+        note = request.note
+        
+        if not mood or not actions:
+            # Fetch today's check-in
+            check_in_result = supabase_service.client.table("daily_check_ins").select("*").eq(
+                "user_id", str(user_id)
+            ).eq("check_in_date", today.isoformat()).execute()
+            
+            if not check_in_result.data:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Please complete your daily check-in first"
+                )
+            
+            check_in = check_in_result.data[0]
+            
+            # Map check-in data to mood/actions
+            # Mood mapping: great -> great, good -> good, okay -> neutral, low/struggling -> sad
+            mood_map = {
+                "great": "great",
+                "good": "good",
+                "okay": "neutral",
+                "low": "sad",
+                "struggling": "sad",
+            }
+            mood = mood_map.get(check_in["mood"], "neutral")
+            
+            # Generate actions based on check-in data
+            actions = []
+            
+            # Energy-based actions
+            if check_in["energy_level"] >= 7:
+                actions.append("exercised")
+            elif check_in["energy_level"] <= 3:
+                actions.append("rested")
+            
+            # Sleep-based actions
+            if check_in["sleep_quality"] in ["excellent", "good"]:
+                actions.append("rested")
+            
+            # Mood-based actions
+            if check_in["mood"] in ["great", "good"]:
+                actions.append("meditated")
+                if check_in.get("gratitude"):
+                    actions.append("loved")
+            
+            # Ensure we have at least one action
+            if not actions:
+                actions = ["meditated"]
+            
+            # Use check-in text as note if available
+            if not note:
+                note_parts = []
+                if check_in.get("feelings"):
+                    note_parts.append(f"Feeling: {check_in['feelings']}")
+                if check_in.get("challenges"):
+                    note_parts.append(f"Challenges: {check_in['challenges']}")
+                if check_in.get("gratitude"):
+                    note_parts.append(f"Grateful for: {check_in['gratitude']}")
+                note = " | ".join(note_parts) if note_parts else None
 
         # Get today's horoscope (legacy API - still useful)
         horoscope = await astrology_service.get_daily_horoscope(user.sun_sign)
