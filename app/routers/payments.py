@@ -343,6 +343,7 @@ async def stripe_webhook(
                 "stripe_subscription_id": subscription["id"],
                 "subscription_status": subscription["status"],
                 "subscription_tier": "premium" if subscription["status"] == "active" else "free",
+                "cancel_at_period_end": subscription.get("cancel_at_period_end", False),
             }
             
             # Add period end if available
