@@ -176,4 +176,3 @@ async def get_latest_check_in(user_id: CurrentUserId) -> Optional[CheckInRespons
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get latest check-in: {str(e)}")
-
