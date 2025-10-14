@@ -215,4 +215,3 @@ async def stripe_webhook(
     except Exception as e:
         print(f"❌ Webhook error: {str(e)}")
         raise HTTPException(status_code=400, detail=f"Webhook error: {str(e)}")
-
