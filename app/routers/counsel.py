@@ -269,4 +269,3 @@ async def get_stats(user_id: CurrentUserId) -> dict:
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get stats: {str(e)}")
-
