@@ -144,6 +144,7 @@ class UserProfile(BaseModel):
     subscription_tier: str = "free"
     stripe_subscription_id: str | None = None
     subscription_period_end: datetime | None = None
+    cancel_at_period_end: bool = False
 
 
 # ============================================================================

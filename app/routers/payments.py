@@ -240,7 +240,12 @@ async def cancel_subscription(user_id: CurrentUserId):
             raise HTTPException(status_code=404, detail="No active subscription found")
         
         # Cancel subscription at period end
-        stripe_service.cancel_subscription(user.stripe_subscription_id)
+        updated_subscription = stripe_service.cancel_subscription(user.stripe_subscription_id)
+        
+        # Update local database flag
+        supabase_service.client.table("users").update({
+            "cancel_at_period_end": True
+        }).eq("id", str(user_id)).execute()
         
         return {"status": "cancelled", "message": "Subscription will cancel at period end"}
         
@@ -248,6 +253,37 @@ async def cancel_subscription(user_id: CurrentUserId):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to cancel subscription: {str(e)}")
+
+
+@router.post("/reactivate-subscription")
+async def reactivate_subscription(user_id: CurrentUserId):
+    """Reactivate a cancelled subscription (undo cancellation)"""
+    try:
+        if not settings.stripe_secret_key:
+            raise HTTPException(status_code=503, detail="Stripe not configured")
+        
+        supabase_service = SupabaseService()
+        stripe_service = StripeService()
+        
+        # Get user
+        user = await supabase_service.get_user(user_id)
+        if not user or not user.stripe_subscription_id:
+            raise HTTPException(status_code=404, detail="No subscription found")
+        
+        # Reactivate subscription
+        stripe_service.reactivate_subscription(user.stripe_subscription_id)
+        
+        # Update local database flag
+        supabase_service.client.table("users").update({
+            "cancel_at_period_end": False
+        }).eq("id", str(user_id)).execute()
+        
+        return {"status": "reactivated", "message": "Subscription reactivated successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to reactivate subscription: {str(e)}")
 
 
 @router.post("/webhook")

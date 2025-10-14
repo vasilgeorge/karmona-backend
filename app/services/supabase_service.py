@@ -68,6 +68,7 @@ class SupabaseService:
             subscription_tier=user_data.get("subscription_tier", "free"),
             stripe_subscription_id=user_data.get("stripe_subscription_id"),
             subscription_period_end=datetime.fromisoformat(user_data["subscription_period_end"].replace("Z", "+00:00")) if user_data.get("subscription_period_end") else None,
+            cancel_at_period_end=user_data.get("cancel_at_period_end", False),
         )
 
     async def get_user(self, user_id: str) -> UserProfile | None:
@@ -94,6 +95,7 @@ class SupabaseService:
             subscription_tier=user_data.get("subscription_tier", "free"),
             stripe_subscription_id=user_data.get("stripe_subscription_id"),
             subscription_period_end=datetime.fromisoformat(user_data["subscription_period_end"].replace("Z", "+00:00")) if user_data.get("subscription_period_end") else None,
+            cancel_at_period_end=user_data.get("cancel_at_period_end", False),
         )
 
     async def create_daily_report(

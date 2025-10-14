@@ -69,10 +69,18 @@ class StripeService:
     
     @staticmethod
     def cancel_subscription(subscription_id: str) -> stripe.Subscription:
-        """Cancel a subscription."""
+        """Cancel a subscription at period end."""
         return stripe.Subscription.modify(
             subscription_id,
             cancel_at_period_end=True
+        )
+    
+    @staticmethod
+    def reactivate_subscription(subscription_id: str) -> stripe.Subscription:
+        """Reactivate a cancelled subscription (undo cancellation)."""
+        return stripe.Subscription.modify(
+            subscription_id,
+            cancel_at_period_end=False
         )
     
     @staticmethod
