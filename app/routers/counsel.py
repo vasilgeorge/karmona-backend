@@ -251,23 +251,53 @@ async def get_stats(user_id: CurrentUserId) -> dict:
     try:
         supabase_service = SupabaseService()
         today = date.today()
-        
+
         # Questions asked today
         today_result = supabase_service.client.table("cosmic_counsel").select("id").eq(
             "user_id", str(user_id)
         ).gte("asked_at", today.isoformat()).execute()
-        
+
         # Total questions
         total_result = supabase_service.client.table("cosmic_counsel").select("id").eq(
             "user_id", str(user_id)
         ).execute()
-        
+
         return {
             "asked_today": len(today_result.data),
             "remaining_today": max(0, 5 - len(today_result.data)),
             "total_questions": len(total_result.data),
             "daily_limit": 5,
         }
-        
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get stats: {str(e)}")
+
+
+@router.delete("/{question_id}")
+async def delete_question(
+    question_id: UUID,
+    user_id: CurrentUserId,
+) -> dict:
+    """Delete a counsel question"""
+    try:
+        supabase_service = SupabaseService()
+
+        # Check if question exists and belongs to user
+        existing = supabase_service.client.table("cosmic_counsel").select("id").eq(
+            "id", str(question_id)
+        ).eq("user_id", str(user_id)).execute()
+
+        if not existing.data:
+            raise HTTPException(status_code=404, detail="Question not found or access denied")
+
+        # Delete the question
+        supabase_service.client.table("cosmic_counsel").delete().eq(
+            "id", str(question_id)
+        ).eq("user_id", str(user_id)).execute()
+
+        return {"message": "Question deleted successfully"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete question: {str(e)}")
