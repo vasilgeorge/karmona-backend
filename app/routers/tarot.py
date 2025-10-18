@@ -76,21 +76,20 @@ async def draw_daily_card(
         meaning = card.upright_meaning if upright else card.reversed_meaning
         orientation = "Upright" if upright else "Reversed"
         
-        prompt = f"""Tarot Reading:
+        prompt = f"""Tarot: **{card.name}** ({orientation})
 
-**Card:** {card.name} ({orientation})
-**Meaning:** {meaning}
-**Keywords:** {', '.join(card.keywords)}
+Meaning: {meaning}
+Keywords: {', '.join(card.keywords)}
 
-**For:** {user.name} ({user.sun_sign})
-**Question:** {request.question or "What energy should I focus on today?"}
-**Date:** {today.strftime('%A, %B %d, %Y')}
+For: {user.name} ({user.sun_sign})
+Question: {request.question or "What energy should I focus on today?"}
+Date: {today.strftime('%A, %B %d')}
 
-Write a warm, personal interpretation (2-3 sentences) that:
-1. Explains what this card means for them TODAY
-2. Gives ONE specific actionable suggestion
+Write 2-3 sentences:
+1. What this card means for them today - be specific, skip generic "embrace the journey" talk
+2. One concrete action to take
 
-Use **bold** for the card name and key themes. Add 1 relevant emoji. Keep it direct and helpful."""
+Be direct. Use **bold** for card name, 1 emoji."""
         
         bedrock_runtime = boto3.client(
             "bedrock-runtime",

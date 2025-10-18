@@ -71,19 +71,15 @@ async def get_weekly_forecast(user_id: CurrentUserId) -> WeeklyForecastResponse:
         
         # Generate new weekly forecast using Claude
         print(f"🤖 Generating new forecast for {user.sun_sign}, week {week_start}")
-        prompt = f"""Generate a weekly astrological forecast for a {user.sun_sign} sun sign.
+        prompt = f"""Generate a weekly forecast for {user.sun_sign}.
 
 Week: {week_start.strftime('%B %d')} - {week_end.strftime('%B %d, %Y')}
 
-Create a warm, insightful weekly forecast (2-3 short paragraphs) that includes:
-1. **Major themes** for {user.sun_sign} this week
-2. **Key dates** or planetary influences (if any significant transits)
-3. **Focus areas** - what they should pay attention to
+Write 2 concise paragraphs (2-3 sentences each):
+1. What's actually happening this week for {user.sun_sign} - skip generic "your rising aligns with" talk
+2. One specific, practical action they can take this week
 
-Use **bold** for key themes and dates, *italics* for gentle emphasis, and 1-2 emojis.
-Keep it practical and encouraging - not overly mystical.
-
-Focus on how their {user.sun_sign} energy can best navigate this week."""
+Be direct. Give real advice, not mystical fluff. Use **bold** for key points, add 1 emoji."""
         
         bedrock_runtime = boto3.client(
             "bedrock-runtime",

@@ -106,28 +106,27 @@ async def ask_question(
             enriched_context = ""
         
         # Generate AI guidance
-        prompt = f"""You are a wise cosmic counselor providing guidance based on astrology and current energy.
+        prompt = f"""Cosmic counselor giving straightforward advice.
 
-User's Profile:
-- Sun Sign: {user.sun_sign}
-- Moon Sign: {user.moon_sign or 'Unknown'}
-{f"- Current Mood: {check_in['mood']}" if check_in else ''}
-{f"- Energy Level: {check_in['energy_level']}/10" if check_in else ''}
-{f"- Sleep Quality: {check_in['sleep_quality']}" if check_in else ''}
+Profile:
+- Sun: {user.sun_sign}
+- Moon: {user.moon_sign or 'Unknown'}
+{f"- Mood: {check_in['mood']}" if check_in else ''}
+{f"- Energy: {check_in['energy_level']}/10" if check_in else ''}
 
-Current Cosmic Energy:
+Cosmic Context:
 {enriched_context}
 
-User's Question: "{request.question}"
+Question: "{request.question}"
 {f"Category: {request.category}" if request.category else ''}
 
-Provide clear, practical guidance in 3-4 sentences:
-1. Acknowledge their question with empathy
-2. Astrological insight (how their sign influences this)
-3. Specific actionable advice
-4. Timing consideration (if relevant - "Today is good for..." or "Wait until...")
+Give 3-4 direct sentences:
+1. Address their question - skip the empathy theatre
+2. One astrological insight that actually matters
+3. Specific action to take
+4. Timing note if relevant
 
-Be warm, wise, and actionable. Focus on empowerment, not predictions."""
+Be real. Skip generic "embrace your power" bullshit. Give actionable advice."""
 
         # Use Bedrock to generate guidance
         body = json.dumps({

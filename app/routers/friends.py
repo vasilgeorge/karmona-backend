@@ -202,15 +202,15 @@ async def generate_compatibility_report(
         
         context = relationship_prompts.get(friend['relationship_type'], 'Focus on how they interact and connect.')
         
-        prompt = f"""Compatibility between **{user.sun_sign}** and **{friend['sun_sign']}** for a {friend['relationship_type']} relationship:
+        prompt = f"""Compatibility: **{user.sun_sign}** + **{friend['sun_sign']}** ({friend['relationship_type']})
 
 {context}
 
-Write 2-3 SHORT sentences with actionable advice for TODAY ({today.strftime('%A')}):
-1. One key strength or dynamic between these signs
+Write 2-3 sentences for TODAY ({today.strftime('%A')}):
+1. One real dynamic between these signs - skip generic "water meets fire" bullshit
 2. One specific thing to do or avoid today
 
-Use **bold** for signs, keep it direct and practical. Add 1 relevant emoji."""
+Be direct and practical. Use **bold** for signs, 1 emoji."""
         
         bedrock_runtime = boto3.client(
             "bedrock-runtime",
