@@ -85,11 +85,12 @@ For: {user.name} ({user.sun_sign})
 Question: {request.question or "What energy should I focus on today?"}
 Date: {today.strftime('%A, %B %d')}
 
-Write 2-3 sentences:
-1. What this card means for them today - be specific, skip generic "embrace the journey" talk
-2. One concrete action to take
+Write 2-3 sentences explaining what this card means for them today - be specific, skip generic "embrace the journey" talk.
 
-Be direct. Use **bold** for card name, 1 emoji."""
+Then add a blank line and write:
+**Action:** [One concrete thing to do today]
+
+Be direct. Use **bold** for card name and the Action label, 1 emoji."""
         
         bedrock_runtime = boto3.client(
             "bedrock-runtime",
