@@ -72,7 +72,7 @@ SCRAPING_SOURCES = [
         Do NOT summarize or shorten the content. Extract the complete horoscope as written.
         Only exclude navigation menus, ads, and unrelated site content.
         """,
-        enabled=True,
+        enabled=False,  # DISABLED - browser timeout issues with this site
     ),
     
     # Cafe Astrology - Daily Horoscopes (sign-specific)

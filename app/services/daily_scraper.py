@@ -178,7 +178,7 @@ class DailyScraper:
             "scraped": [],
             "failed": [],
             "uploaded": 0,
-            "total": total_scrapes + 2,  # +1 for ephemeris, +1 for NASA APOD
+            "total": total_scrapes + 1,  # +1 for ephemeris (NASA APOD disabled)
         }
         
         document_index = 0
@@ -201,25 +201,25 @@ class DailyScraper:
             print(f"❌ Ephemeris error: {e}")
             results['failed'].append('ephemeris_planetary_positions')
 
-        # STEP 2: Fetch NASA APOD (API call)
-        print(f"\n{'='*60}")
-        print("🚀 STEP 2: Fetching NASA Astronomy Picture of the Day")
-        print(f"{'='*60}")
+        # STEP 2: Fetch NASA APOD (API call) - DISABLED due to timeout issues
+        # print(f"\n{'='*60}")
+        # print("🚀 STEP 2: Fetching NASA Astronomy Picture of the Day")
+        # print(f"{'='*60}")
+        #
+        # try:
+        #     apod_result = self.nasa_apod_service.run_daily_fetch(today)
+        #     if apod_result.get('success'):
+        #         results['scraped'].append('nasa_apod')
+        #         results['uploaded'] += 1
+        #         print("✅ NASA APOD fetched and uploaded")
+        #     else:
+        #         results['failed'].append('nasa_apod')
+        #         print("❌ NASA APOD fetch failed")
+        # except Exception as e:
+        #     print(f"❌ NASA APOD error: {e}")
+        #     results['failed'].append('nasa_apod')
 
-        try:
-            apod_result = self.nasa_apod_service.run_daily_fetch(today)
-            if apod_result.get('success'):
-                results['scraped'].append('nasa_apod')
-                results['uploaded'] += 1
-                print("✅ NASA APOD fetched and uploaded")
-            else:
-                results['failed'].append('nasa_apod')
-                print("❌ NASA APOD fetch failed")
-        except Exception as e:
-            print(f"❌ NASA APOD error: {e}")
-            results['failed'].append('nasa_apod')
-
-        # STEP 3: Process each configured source (web scraping)
+        # STEP 2: Process each configured source (web scraping)
         for source_config in sources:
             print(f"\n{'='*60}")
             print(f"📰 Source: {source_config.name} ({source_config.source_type})")
