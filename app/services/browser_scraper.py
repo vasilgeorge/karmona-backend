@@ -39,12 +39,12 @@ class BrowserScraper:
             aws_secret_access_key=settings.aws_secret_access_key,
         )
         
-        # Use Nova Micro for extraction (much cheaper than Claude)
+        # Use Claude Haiku for better extraction quality (still cheap, better than Nova Micro)
         return ChatBedrock(
-            model_id="us.amazon.nova-micro-v1:0",  # ~100x cheaper than Claude!
+            model_id="us.anthropic.claude-3-haiku-20240307-v1:0",  # Cross-region inference profile
             client=bedrock_client,
             model_kwargs={
-                "max_tokens": 4096,  # Maximum for Nova Micro - allow full extraction
+                "max_tokens": 4096,  # Allow full extraction
                 "temperature": 0.1,   # Lower temperature for more literal extraction
             },
         )
