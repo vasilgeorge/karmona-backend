@@ -59,20 +59,48 @@ SCRAPING_SOURCES = [
         source_type="sign_specific",
         url_pattern="https://astrostyle.com/horoscopes/daily/{sign}/",
         extraction_prompt="""
-        Extract TODAY'S daily horoscope for {sign}.
-        Focus on:
-        1. Today's specific guidance and energy
-        2. Planetary influences mentioned
-        3. Practical advice or actions suggested
-        
-        Return a concise summary (3-4 sentences) of the key insights.
+        Extract TODAY'S COMPLETE daily horoscope for {sign}.
+
+        Include ALL of the following:
+        1. Main horoscope text - extract the FULL text, not a summary
+        2. All planetary influences, transits, and aspects mentioned
+        3. All practical advice, actions, or guidance provided
+        4. Lucky numbers, colors, or other attributes if mentioned
+        5. Love, career, or other specific area forecasts if provided
+        6. Any timing information (morning/afternoon/evening guidance)
+
+        Do NOT summarize or shorten the content. Extract the complete horoscope as written.
+        Only exclude navigation menus, ads, and unrelated site content.
         """,
         enabled=True,
     ),
     
+    # Cafe Astrology - Daily Horoscopes (sign-specific)
+    ScrapingSource(
+        name="cafeastrology_horoscopes",
+        source_type="sign_specific",
+        url_pattern="https://cafeastrology.com/{sign}dailyhoroscope.html",
+        extraction_prompt="""
+        Extract TODAY'S COMPLETE daily horoscope for {sign}.
+
+        Include ALL of the following:
+        1. Main horoscope text - extract the FULL text, not a summary
+        2. All planetary influences, transits, and aspects mentioned (e.g., Mercury-Mars alignment, Sun-Saturn quincunx)
+        3. All practical advice, actions, or areas of focus described
+        4. Emotional, energetic, and spiritual insights provided
+        5. Any timing information (morning/evening differences)
+        6. Love, relationships, career, finance guidance if mentioned
+        7. Any ratings or scores provided (creativity, love, business, etc.)
+
+        Do NOT summarize or shorten the content. Extract the complete horoscope as written on the page.
+        Only exclude navigation menus, ads, calendars, and unrelated site content.
+        """,
+        enabled=True,
+    ),
+
     # Cosmic overview sources (1 URL each)
     ScrapingSource(
-        name="cafeastrology",
+        name="cafeastrology_cosmic_overview",
         source_type="cosmic_overview",
         url="https://www.cafeastrology.com/",
         extraction_prompt="""
@@ -81,10 +109,10 @@ SCRAPING_SOURCES = [
         2. Planetary aspects happening today
         3. Any planets in retrograde
         4. Overall cosmic energy or theme for the day
-        
+
         Be specific about today's astrological events.
         """,
-        enabled=True,
+        enabled=False,  # Disabled for now, we'll enable after testing horoscopes
     ),
     
     ScrapingSource(

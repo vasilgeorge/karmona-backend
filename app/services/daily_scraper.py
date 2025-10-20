@@ -11,6 +11,7 @@ import boto3
 from app.core.config import settings
 from app.services.browser_scraper import BrowserScraper
 from app.services.scraping_sources import get_enabled_sources, count_total_scrapes
+from app.services.ephemeris_service import EphemerisService
 
 
 class DailyScraper:
@@ -22,6 +23,7 @@ class DailyScraper:
     def __init__(self):
         """Initialize daily scraper."""
         self.browser_scraper = BrowserScraper()
+        self.ephemeris_service = EphemerisService()
         self.s3_client = boto3.client(
             's3',
             region_name=settings.aws_region,
@@ -174,12 +176,30 @@ class DailyScraper:
             "scraped": [],
             "failed": [],
             "uploaded": 0,
-            "total": total_scrapes,
+            "total": total_scrapes + 1,  # +1 for ephemeris
         }
         
         document_index = 0
-        
-        # Process each configured source
+
+        # STEP 1: Calculate planetary positions (no scraping needed)
+        print(f"\n{'='*60}")
+        print("🌌 STEP 1: Calculating Planetary Positions (Ephemeris)")
+        print(f"{'='*60}")
+
+        try:
+            ephemeris_result = self.ephemeris_service.run_daily_calculation(today)
+            if ephemeris_result.get('success'):
+                results['scraped'].append('ephemeris_planetary_positions')
+                results['uploaded'] += 1
+                print("✅ Ephemeris calculation complete and uploaded")
+            else:
+                results['failed'].append('ephemeris_planetary_positions')
+                print("❌ Ephemeris calculation failed")
+        except Exception as e:
+            print(f"❌ Ephemeris error: {e}")
+            results['failed'].append('ephemeris_planetary_positions')
+
+        # STEP 2: Process each configured source (web scraping)
         for source_config in sources:
             print(f"\n{'='*60}")
             print(f"📰 Source: {source_config.name} ({source_config.source_type})")

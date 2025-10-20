@@ -93,22 +93,30 @@ class BrowserScraper:
                         # Navigate to URL (with generous timeout for slow sites)
                         print(f"🌐 Navigating to: {url}")
                         page.goto(url, timeout=40000, wait_until="domcontentloaded")  # 40s timeout, faster load
+                        print(f"✅ Navigation complete")
                         time.sleep(wait_seconds)
+
+                        # Extract page content (use content() instead of inner_text to avoid timeout)
+                        html_content = page.content()
+                        print(f"📄 HTML content extracted ({len(html_content)} chars)")
+
+                        # Extract text from HTML using simple parsing
+                        from bs4 import BeautifulSoup
+                        soup = BeautifulSoup(html_content, 'html.parser')
+                        content = soup.get_text(separator='\n', strip=True)
+                        print(f"📝 Text content extracted ({len(content)} chars)")
                         
-                        # Extract page content
-                        content = page.inner_text('body')
-                        print(f"📄 Page content extracted ({len(content)} chars)")
-                        
-                        # Use Claude to extract specific data
+                        # Use Nova Micro to extract specific data
                         llm = self._create_llm()
-                        
+
+                        # Send more content to LLM (first 15000 chars for better extraction)
                         full_prompt = f"""{extraction_prompt}
 
-Here's the page content (first 5000 chars):
+Here's the page content:
 
-{content[:5000]}"""
-                        
-                        print(f"🤖 Asking Claude to extract data...")
+{content[:15000]}"""
+
+                        print(f"🤖 Asking LLM to extract data...")
                         result = llm.invoke(full_prompt).content
                         
                         return {
