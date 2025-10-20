@@ -166,6 +166,30 @@ SCRAPING_SOURCES = [
         """,
         enabled=True,
     ),
+
+    # Retrograde planets
+    ScrapingSource(
+        name="cafeastrology_retrogrades",
+        source_type="cosmic_overview",
+        url="https://cafeastrology.com/calendars/todayinastrologycalendar.html",
+        extraction_prompt="""
+        Extract information about planets currently in RETROGRADE motion.
+
+        Look for planetary positions marked with "R" (indicating retrograde).
+
+        For each retrograde planet, extract:
+        1. Planet name
+        2. Current zodiac sign
+        3. Exact degree position
+        4. That it's retrograde (marked with R)
+
+        Example format: "Saturn is retrograde at 26° Pisces"
+
+        List ALL planets that are currently retrograde.
+        If no planets are retrograde, state "No planets are currently retrograde."
+        """,
+        enabled=True,
+    ),
 ]
 
 
