@@ -70,12 +70,63 @@ async def draw_daily_card(
         
         # Randomly determine upright or reversed
         upright = random.choice([True, False])
-        
+
+        # Get today's astrological context from KB
+        enriched_context = ""
+        try:
+            from app.core.config import settings
+
+            bedrock_agent_runtime = boto3.client(
+                'bedrock-agent-runtime',
+                region_name=settings.aws_region,
+                aws_access_key_id=settings.aws_access_key_id,
+                aws_secret_access_key=settings.aws_secret_access_key,
+            )
+
+            # Build search query for tarot context
+            search_query = f"{user.sun_sign} {card.name} {' '.join(card.keywords[:3])} today"
+            if request.question:
+                search_query = f"{search_query} {request.question}"
+
+            print(f"🔍 Searching KB for tarot context: {search_query}")
+
+            response = bedrock_agent_runtime.retrieve(
+                knowledgeBaseId=settings.bedrock_knowledge_base_id,
+                retrievalQuery={'text': search_query},
+                retrievalConfiguration={
+                    'vectorSearchConfiguration': {
+                        'numberOfResults': 3,  # Fewer for tarot
+                    }
+                }
+            )
+
+            # Format results
+            retrieved_results = response.get('retrievalResults', [])
+            context_chunks = []
+
+            for i, result in enumerate(retrieved_results, 1):
+                if result.get('score', 0) > 0.3:
+                    try:
+                        doc = json.loads(result['content']['text'])
+                        content = doc.get('content', result['content']['text'])
+                        content = content.replace('\n', ' ').replace('\r', ' ').strip()
+                        context_chunks.append(content)
+                    except:
+                        sanitized = result['content']['text'].replace('\n', ' ').strip()
+                        context_chunks.append(sanitized)
+
+            if context_chunks:
+                enriched_context = "\n\nToday's cosmic context:\n" + "\n".join(context_chunks)
+                print(f"✅ Retrieved {len(context_chunks)} insights")
+
+        except Exception as e:
+            print(f"⚠️  KB retrieval error: {e}")
+
         # Generate AI interpretation
         today = date.today()
         meaning = card.upright_meaning if upright else card.reversed_meaning
         orientation = "Upright" if upright else "Reversed"
-        
+
         prompt = f"""Tarot: **{card.name}** ({orientation})
 
 Meaning: {meaning}
@@ -83,14 +134,19 @@ Keywords: {', '.join(card.keywords)}
 
 For: {user.name} ({user.sun_sign})
 Question: {request.question or "What energy should I focus on today?"}
-Date: {today.strftime('%A, %B %d')}
+Date: {today.strftime('%A, %B %d')}{enriched_context}
 
-Write 2-3 sentences explaining what this card means for them today - be specific, skip generic "embrace the journey" talk.
+The cosmic context includes today's horoscope, current planetary positions, moon phase, and astrological transits.
+
+Write 2-3 sentences explaining what this card means for them today:
+- Connect the card's energy to the actual astrological conditions above
+- Be specific about how the current transits/moon phase relate to the card
+- Skip generic "embrace the journey" talk
 
 Then add a blank line and write:
-**Action:** [One concrete thing to do today]
+**Action:** [One concrete thing to do today that considers both the card AND the astrological timing]
 
-Be direct. Use **bold** for card name and the Action label, 1 emoji."""
+Be direct. Use the real astrological data. Use **bold** for card name and the Action label, 1 emoji."""
         
         bedrock_runtime = boto3.client(
             "bedrock-runtime",

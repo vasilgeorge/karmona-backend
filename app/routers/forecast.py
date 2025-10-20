@@ -69,17 +69,73 @@ async def get_weekly_forecast(user_id: CurrentUserId) -> WeeklyForecastResponse:
                 week_end=cached["week_end"],
             )
         
+        # Get astrological context from KB for the week
+        enriched_context = ""
+        try:
+            bedrock_agent_runtime = boto3.client(
+                'bedrock-agent-runtime',
+                region_name=settings.aws_region,
+                aws_access_key_id=settings.aws_access_key_id,
+                aws_secret_access_key=settings.aws_secret_access_key,
+            )
+
+            # Build search query for weekly forecast
+            search_query = f"{user.sun_sign} weekly forecast this week planetary transits"
+            if user.moon_sign:
+                search_query = f"{search_query} {user.moon_sign} moon"
+
+            print(f"🔍 Searching KB for weekly context: {search_query}")
+
+            response = bedrock_agent_runtime.retrieve(
+                knowledgeBaseId=settings.bedrock_knowledge_base_id,
+                retrievalQuery={'text': search_query},
+                retrievalConfiguration={
+                    'vectorSearchConfiguration': {
+                        'numberOfResults': 5,
+                    }
+                }
+            )
+
+            # Format results
+            retrieved_results = response.get('retrievalResults', [])
+            context_chunks = []
+
+            for i, result in enumerate(retrieved_results, 1):
+                if result.get('score', 0) > 0.3:
+                    try:
+                        doc = json.loads(result['content']['text'])
+                        content = doc.get('content', result['content']['text'])
+                        content = content.replace('\n', ' ').replace('\r', ' ').strip()
+                        context_chunks.append(content)
+                    except:
+                        sanitized = result['content']['text'].replace('\n', ' ').strip()
+                        context_chunks.append(sanitized)
+
+            if context_chunks:
+                enriched_context = "\n\nAstrological context for this week:\n" + "\n".join(context_chunks)
+                print(f"✅ Retrieved {len(context_chunks)} weekly insights")
+
+        except Exception as e:
+            print(f"⚠️  KB retrieval error: {e}")
+
         # Generate new weekly forecast using Claude
         print(f"🤖 Generating new forecast for {user.sun_sign}, week {week_start}")
         prompt = f"""Generate a weekly forecast for {user.sun_sign}.
 
-Week: {week_start.strftime('%B %d')} - {week_end.strftime('%B %d, %Y')}
+Week: {week_start.strftime('%B %d')} - {week_end.strftime('%B %d, %Y')}{enriched_context}
+
+The astrological context includes:
+- Weekly horoscopes from professional astrologers
+- Current planetary transits and aspects
+- Moon phases and void-of-course times this week
+- Retrograde planets (if any)
+- Upcoming eclipses or significant celestial events
 
 Write 2 concise paragraphs (2-3 sentences each):
-1. What's actually happening this week for {user.sun_sign} - skip generic "your rising aligns with" talk
-2. One specific, practical action they can take this week
+1. What's actually happening this week for {user.sun_sign} based on the real transits and moon phases above
+2. One specific, practical action they can take this week, timed with the actual astrological conditions
 
-Be direct. Give real advice, not mystical fluff. Use **bold** for key points, add 1 emoji."""
+Be direct. Use the actual planetary data. Skip generic "your rising aligns with" talk. Use **bold** for key points, add 1 emoji."""
         
         bedrock_runtime = boto3.client(
             "bedrock-runtime",

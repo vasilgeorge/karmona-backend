@@ -98,7 +98,7 @@ class BrowserScraper:
                         print(f"🌐 Navigating to: {url}")
                         page.goto(url, timeout=40000, wait_until="domcontentloaded")  # 40s timeout, faster load
                         print(f"✅ Navigation complete")
-                        time.sleep(wait_seconds)
+                        # Note: Removed time.sleep() - AgentCore sessions close during idle periods
 
                         # Extract page content (use content() instead of inner_text to avoid timeout)
                         html_content = page.content()

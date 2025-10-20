@@ -193,13 +193,21 @@ Be real. Be helpful. Skip the mystical fluff."""
 - Mood: {mood}
 - Actions: {actions_text}{note_text}
 
-**Context:**{horoscope_text}{enriched_text}
+**Astrological Context:**{horoscope_text}{enriched_text}
+
+The enriched context includes:
+- Today's horoscopes from multiple professional astrologers
+- Current planetary positions and transits (Swiss Ephemeris calculations)
+- Moon phase and current moon sign
+- Retrograde planets (if any)
+- Upcoming eclipses and significant celestial events
+- Spiritual wisdom and timing guidance
 
 Write 2 direct paragraphs:
-1. What happened today for this **{sun_sign}** based on their {mood} mood and actions
-2. One specific thing to do or remember
+1. What happened today for this **{sun_sign}** based on their {mood} mood, actions, AND the actual astrological conditions above
+2. One specific thing to do or remember, timed with the real planetary positions or moon phase
 
-Skip generic astrology talk. Be specific. Use **bold** for key points, 1-2 emojis."""
+Use the actual astrological data provided. Skip generic "your energy aligns" talk. Be specific about how today's transits or moon phase relate to their experience. Use **bold** for key points, 1-2 emojis."""
 
     def _get_fallback_reflection(
         self, mood: MoodType, actions: list[ActionType]

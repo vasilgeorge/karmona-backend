@@ -72,7 +72,7 @@ SCRAPING_SOURCES = [
         Do NOT summarize or shorten the content. Extract the complete horoscope as written.
         Only exclude navigation menus, ads, and unrelated site content.
         """,
-        enabled=False,  # DISABLED - browser timeout issues with this site
+        enabled=True,
     ),
     
     # Cafe Astrology - Daily Horoscopes (sign-specific)
@@ -210,24 +210,26 @@ SCRAPING_SOURCES = [
         enabled=True,
     ),
 
-    # Weekly horoscopes (run on Sundays or daily)
+    # Weekly horoscopes (run daily - gives users weekly perspective)
     ScrapingSource(
-        name="astrology_com_weekly_aries",
+        name="astrology_com_weekly",
         source_type="sign_specific",
         url_pattern="https://www.astrology.com/horoscope/weekly/{sign}.html",
         extraction_prompt="""
         Extract this WEEK's complete horoscope forecast for {sign}.
 
-        Include:
-        1. The full weekly forecast text
+        Include ALL of the following:
+        1. The full weekly forecast text - extract EVERYTHING, don't summarize
         2. Week date range if shown
-        3. Key themes for the week
+        3. Key themes and focus areas for the week
         4. Any specific day-by-day guidance if provided
+        5. Important planetary transits or aspects mentioned for this week
+        6. Timing advice (best days for specific activities)
 
-        Extract the complete text - do not summarize.
+        Extract the complete text exactly as written. Do not shorten or paraphrase.
         """,
-        enabled=False,  # Set to True when you want weekly forecasts
-        frequency="weekly",  # Could check day of week and only run on Sundays
+        enabled=True,  # Now enabled - provides weekly perspective
+        frequency="daily",  # Run daily so users always have current week's forecast
     ),
 ]
 

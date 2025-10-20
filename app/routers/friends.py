@@ -183,13 +183,60 @@ async def generate_compatibility_report(
                 generated_today=True,
             )
         
+        # Get today's astrological context from KB for compatibility
+        enriched_context = ""
+        try:
+            bedrock_agent_runtime = boto3.client(
+                'bedrock-agent-runtime',
+                region_name=settings.aws_region,
+                aws_access_key_id=settings.aws_access_key_id,
+                aws_secret_access_key=settings.aws_secret_access_key,
+            )
+
+            # Build search query for compatibility context
+            search_query = f"{user.sun_sign} {friend['sun_sign']} compatibility relationship {friend['relationship_type']}"
+
+            print(f"🔍 Searching KB for compatibility context: {search_query}")
+
+            response = bedrock_agent_runtime.retrieve(
+                knowledgeBaseId=settings.bedrock_knowledge_base_id,
+                retrievalQuery={'text': search_query},
+                retrievalConfiguration={
+                    'vectorSearchConfiguration': {
+                        'numberOfResults': 3,
+                    }
+                }
+            )
+
+            # Format results
+            retrieved_results = response.get('retrievalResults', [])
+            context_chunks = []
+
+            for i, result in enumerate(retrieved_results, 1):
+                if result.get('score', 0) > 0.3:
+                    try:
+                        doc = json.loads(result['content']['text'])
+                        content = doc.get('content', result['content']['text'])
+                        content = content.replace('\n', ' ').replace('\r', ' ').strip()
+                        context_chunks.append(content)
+                    except:
+                        sanitized = result['content']['text'].replace('\n', ' ').strip()
+                        context_chunks.append(sanitized)
+
+            if context_chunks:
+                enriched_context = "\n\nToday's astrological context:\n" + "\n".join(context_chunks)
+                print(f"✅ Retrieved {len(context_chunks)} compatibility insights")
+
+        except Exception as e:
+            print(f"⚠️  KB retrieval error: {e}")
+
         # Generate new compatibility report
         print(f"🤖 Generating compatibility report: {user.name} + {friend['nickname']}")
-        
+
         # Get elements
         user_element = astrology_service.get_zodiac_element(user.sun_sign)
         friend_element = astrology_service.get_zodiac_element(friend["sun_sign"])
-        
+
         # Relationship-specific prompts
         relationship_prompts = {
             'romantic': 'Focus on emotional connection, communication styles, and attraction dynamics.',
@@ -201,16 +248,18 @@ async def generate_compatibility_report(
         }
         
         context = relationship_prompts.get(friend['relationship_type'], 'Focus on how they interact and connect.')
-        
+
         prompt = f"""Compatibility: **{user.sun_sign}** + **{friend['sun_sign']}** ({friend['relationship_type']})
 
-{context}
+{context}{enriched_context}
+
+The astrological context includes today's horoscopes, planetary transits, moon phase, and timing guidance.
 
 Write 2-3 sentences for TODAY ({today.strftime('%A')}):
-1. One real dynamic between these signs - skip generic "water meets fire" bullshit
-2. One specific thing to do or avoid today
+1. One real dynamic between these signs based on today's astrological conditions - skip generic "water meets fire" bullshit
+2. One specific thing to do or avoid today, considering the current transits and moon phase
 
-Be direct and practical. Use **bold** for signs, 1 emoji."""
+Be direct and practical. Use the actual astrological data. Use **bold** for signs, 1 emoji."""
         
         bedrock_runtime = boto3.client(
             "bedrock-runtime",
