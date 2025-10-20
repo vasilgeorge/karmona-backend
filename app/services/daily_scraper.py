@@ -12,6 +12,7 @@ from app.core.config import settings
 from app.services.browser_scraper import BrowserScraper
 from app.services.scraping_sources import get_enabled_sources, count_total_scrapes
 from app.services.ephemeris_service import EphemerisService
+from app.services.nasa_apod_service import NASAAPODService
 
 
 class DailyScraper:
@@ -24,6 +25,7 @@ class DailyScraper:
         """Initialize daily scraper."""
         self.browser_scraper = BrowserScraper()
         self.ephemeris_service = EphemerisService()
+        self.nasa_apod_service = NASAAPODService()
         self.s3_client = boto3.client(
             's3',
             region_name=settings.aws_region,
@@ -176,7 +178,7 @@ class DailyScraper:
             "scraped": [],
             "failed": [],
             "uploaded": 0,
-            "total": total_scrapes + 1,  # +1 for ephemeris
+            "total": total_scrapes + 2,  # +1 for ephemeris, +1 for NASA APOD
         }
         
         document_index = 0
@@ -199,7 +201,25 @@ class DailyScraper:
             print(f"❌ Ephemeris error: {e}")
             results['failed'].append('ephemeris_planetary_positions')
 
-        # STEP 2: Process each configured source (web scraping)
+        # STEP 2: Fetch NASA APOD (API call)
+        print(f"\n{'='*60}")
+        print("🚀 STEP 2: Fetching NASA Astronomy Picture of the Day")
+        print(f"{'='*60}")
+
+        try:
+            apod_result = self.nasa_apod_service.run_daily_fetch(today)
+            if apod_result.get('success'):
+                results['scraped'].append('nasa_apod')
+                results['uploaded'] += 1
+                print("✅ NASA APOD fetched and uploaded")
+            else:
+                results['failed'].append('nasa_apod')
+                print("❌ NASA APOD fetch failed")
+        except Exception as e:
+            print(f"❌ NASA APOD error: {e}")
+            results['failed'].append('nasa_apod')
+
+        # STEP 3: Process each configured source (web scraping)
         for source_config in sources:
             print(f"\n{'='*60}")
             print(f"📰 Source: {source_config.name} ({source_config.source_type})")

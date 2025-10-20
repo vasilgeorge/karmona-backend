@@ -52,7 +52,10 @@ class Settings(BaseSettings):
 
     # Astrology API Settings
     aztro_api_url: str = "https://aztro.sameerkumar.website"
-    
+
+    # NASA API Settings
+    nasa_api_key: str = "DEMO_KEY"  # NASA's demo key, free but rate-limited
+
     # Stripe Settings (optional until configured)
     stripe_secret_key: str | None = None
     stripe_publishable_key: str | None = None
