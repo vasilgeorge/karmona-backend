@@ -44,7 +44,7 @@ class BrowserScraper:
             model_id="us.amazon.nova-micro-v1:0",  # ~100x cheaper than Claude!
             client=bedrock_client,
             model_kwargs={
-                "max_tokens": 2000,  # Allow longer responses
+                "max_tokens": 4096,  # Maximum for Nova Micro - allow full extraction
                 "temperature": 0.1,   # Lower temperature for more literal extraction
             },
         )
