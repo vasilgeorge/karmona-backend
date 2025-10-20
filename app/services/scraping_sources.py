@@ -81,19 +81,32 @@ SCRAPING_SOURCES = [
         source_type="sign_specific",
         url_pattern="https://cafeastrology.com/{sign}dailyhoroscope.html",
         extraction_prompt="""
-        Extract TODAY'S COMPLETE daily horoscope for {sign}.
+        Extract TODAY'S COMPLETE daily horoscope for {sign} in its ORIGINAL form.
 
-        Include ALL of the following:
-        1. Main horoscope text - extract the FULL text, not a summary
-        2. All planetary influences, transits, and aspects mentioned (e.g., Mercury-Mars alignment, Sun-Saturn quincunx)
-        3. All practical advice, actions, or areas of focus described
-        4. Emotional, energetic, and spiritual insights provided
-        5. Any timing information (morning/evening differences)
-        6. Love, relationships, career, finance guidance if mentioned
-        7. Any ratings or scores provided (creativity, love, business, etc.)
+        **CRITICAL: Quote the horoscope text word-for-word. Do NOT paraphrase or summarize.**
 
-        Do NOT summarize or shorten the content. Extract the complete horoscope as written on the page.
-        Only exclude navigation menus, ads, calendars, and unrelated site content.
+        Format your response exactly like this:
+
+        **Daily Horoscope:**
+        [Quote the complete horoscope paragraph(s) exactly as written]
+
+        **Planetary Influences:**
+        [List all planetary alignments, transits, and aspects mentioned]
+
+        **Specific Advice:**
+        [List all specific actions, guidance, and recommendations]
+
+        **Ratings (if provided):**
+        [Include any ratings for Love, Creativity, Business, etc.]
+
+        **Timing Notes:**
+        [Any morning/afternoon/evening specific guidance]
+
+        **Additional Forecasts:**
+        [Any love/career/money/health forecasts if provided]
+
+        Remember: Extract word-for-word. Preserve all detail. Do not condense.
+        Only exclude navigation menus, ads, and unrelated site content.
         """,
         enabled=True,
     ),
