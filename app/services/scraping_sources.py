@@ -190,6 +190,45 @@ SCRAPING_SOURCES = [
         """,
         enabled=True,
     ),
+
+    # Eclipse calendar
+    ScrapingSource(
+        name="timeanddate_eclipses",
+        source_type="cosmic_overview",
+        url="https://www.timeanddate.com/eclipse/list.html",
+        extraction_prompt="""
+        Extract upcoming eclipse information for the next 12 months:
+
+        For each eclipse, extract:
+        1. Eclipse type (Solar or Lunar, Total/Partial/Annular)
+        2. Date
+        3. Brief description if available
+
+        Focus on eclipses happening in 2025 and early 2026.
+        This data changes infrequently so it's okay to get broader timeframe.
+        """,
+        enabled=True,
+    ),
+
+    # Weekly horoscopes (run on Sundays or daily)
+    ScrapingSource(
+        name="astrology_com_weekly_aries",
+        source_type="sign_specific",
+        url_pattern="https://www.astrology.com/horoscope/weekly/{sign}.html",
+        extraction_prompt="""
+        Extract this WEEK's complete horoscope forecast for {sign}.
+
+        Include:
+        1. The full weekly forecast text
+        2. Week date range if shown
+        3. Key themes for the week
+        4. Any specific day-by-day guidance if provided
+
+        Extract the complete text - do not summarize.
+        """,
+        enabled=False,  # Set to True when you want weekly forecasts
+        frequency="weekly",  # Could check day of week and only run on Sundays
+    ),
 ]
 
 
