@@ -140,8 +140,29 @@ SCRAPING_SOURCES = [
         1. Featured inspirational teaching or quote
         2. Practical mindfulness suggestions
         3. Guidance on self-reflection or intention-setting
-        
+
         Summarize in 2-3 sentences with warm, grounding energy.
+        """,
+        enabled=True,
+    ),
+
+    # Moon phase data
+    ScrapingSource(
+        name="moongiant_phase",
+        source_type="cosmic_overview",
+        url="https://www.moongiant.com/phase/today/",
+        extraction_prompt="""
+        Extract TODAY's complete moon phase information:
+
+        1. Moon Phase Name (e.g., Waning Crescent, Full Moon, New Moon, etc.)
+        2. Illumination percentage
+        3. Moon Age (days into current lunar cycle)
+        4. Current Moon Sign (which zodiac sign the moon is in)
+        5. Moon's position in degrees within that sign
+        6. Moonrise time (if available)
+        7. Moonset time (if available)
+
+        Include ALL details exactly as shown. This is important astrological data.
         """,
         enabled=True,
     ),
