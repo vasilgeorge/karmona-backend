@@ -310,6 +310,8 @@ Be real. Use the actual astrological data. Skip generic "embrace your power" bul
         
         counsel = result.data[0]
         
+        # Return friend data from our in-memory friend_data if available, 
+        # even if database save failed (columns might not exist yet)
         return CounselResponse(
             id=counsel["id"],
             question=counsel["question"],
@@ -322,10 +324,10 @@ Be real. Use the actual astrological data. Skip generic "embrace your power" bul
                 "energy_level": counsel["energy_level"],
             },
             asked_at=datetime.fromisoformat(counsel["asked_at"].replace("Z", "+00:00")),
-            friend_id=counsel.get("friend_id"),
-            friend_nickname=counsel.get("friend_nickname"),
-            friend_sun_sign=counsel.get("friend_sun_sign"),
-            friend_moon_sign=counsel.get("friend_moon_sign")
+            friend_id=str(request.friend_id) if request.friend_id and friend_data else None,
+            friend_nickname=friend_data["nickname"] if friend_data else None,
+            friend_sun_sign=friend_data["sun_sign"] if friend_data else None,
+            friend_moon_sign=friend_data.get("moon_sign") if friend_data else None
         )
         
     except HTTPException:
