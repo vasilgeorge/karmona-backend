@@ -36,6 +36,10 @@ class CounselResponse(BaseModel):
     category: Optional[str]
     context: dict  # Sun sign, moon sign, mood, energy
     asked_at: datetime
+    friend_id: Optional[UUID] = None
+    friend_nickname: Optional[str] = None
+    friend_sun_sign: Optional[str] = None
+    friend_moon_sign: Optional[str] = None
 
 
 class CounselHistoryResponse(BaseModel):
@@ -230,6 +234,16 @@ Be real. Use the actual astrological data. Skip generic "embrace your power" bul
         response_body = json.loads(response['body'].read())
         answer = response_body["content"][0]["text"].strip()
         
+        # Get friend data if friend_id provided (for storage)
+        friend_data = None
+        if request.friend_id:
+            friend_result = supabase_service.client.table("friends").select("*").eq(
+                "id", str(request.friend_id)
+            ).eq("user_id", str(user_id)).execute()
+            
+            if friend_result.data:
+                friend_data = friend_result.data[0]
+        
         # Store in database
         data = {
             "user_id": str(user_id),
@@ -240,6 +254,10 @@ Be real. Use the actual astrological data. Skip generic "embrace your power" bul
             "moon_sign": user.moon_sign,
             "mood": check_in["mood"] if check_in else None,
             "energy_level": check_in["energy_level"] if check_in else None,
+            "friend_id": str(request.friend_id) if request.friend_id else None,
+            "friend_nickname": friend_data["nickname"] if friend_data else None,
+            "friend_sun_sign": friend_data["sun_sign"] if friend_data else None,
+            "friend_moon_sign": friend_data["moon_sign"] if friend_data else None,
         }
         
         result = supabase_service.client.table("cosmic_counsel").insert(data).execute()
@@ -260,7 +278,11 @@ Be real. Use the actual astrological data. Skip generic "embrace your power" bul
                 "mood": counsel["mood"],
                 "energy_level": counsel["energy_level"],
             },
-            asked_at=datetime.fromisoformat(counsel["asked_at"].replace("Z", "+00:00"))
+            asked_at=datetime.fromisoformat(counsel["asked_at"].replace("Z", "+00:00")),
+            friend_id=counsel.get("friend_id"),
+            friend_nickname=counsel.get("friend_nickname"),
+            friend_sun_sign=counsel.get("friend_sun_sign"),
+            friend_moon_sign=counsel.get("friend_moon_sign")
         )
         
     except HTTPException:
