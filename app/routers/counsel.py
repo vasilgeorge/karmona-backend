@@ -25,6 +25,7 @@ class CounselRequest(BaseModel):
     """Request for cosmic guidance"""
     question: str = Field(..., min_length=10, max_length=500, description="User's question")
     category: Optional[str] = Field(None, description="career, love, finance, life_change, relationships, other")
+    friend_id: Optional[UUID] = Field(None, description="ID of friend to include in counsel context")
 
 
 class CounselResponse(BaseModel):
@@ -96,6 +97,26 @@ async def ask_question(
         
         check_in = check_in_result.data[0] if check_in_result.data else None
         
+        # Get friend data if friend_id provided
+        friend_context = ""
+        if request.friend_id:
+            friend_result = supabase_service.client.table("friends").select("*").eq(
+                "id", str(request.friend_id)
+            ).eq("user_id", str(user_id)).execute()
+            
+            if friend_result.data:
+                friend = friend_result.data[0]
+                friend_context = f"""
+FRIEND CONTEXT:
+- Name: {friend['nickname']}
+- Sun Sign: {friend['sun_sign']}
+- Moon Sign: {friend['moon_sign'] or 'Unknown'}
+- Age: {friend['age'] or 'Unknown'}
+- Relationship: {friend['relationship_type']}
+- Location: {friend['current_location'] or 'Unknown'}
+- Notes: {friend['notes'] or 'None'}
+"""
+        
         # Get cosmic context from KB
         # Build a semantic query from the user's question + their profile
         try:
@@ -165,6 +186,8 @@ Profile:
 {f"- Mood: {check_in['mood']}" if check_in else ''}
 {f"- Energy: {check_in['energy_level']}/10" if check_in else ''}
 
+{friend_context if friend_context else ""}
+
 Question: "{request.question}"
 {f"Category: {request.category}" if request.category else ''}
 
@@ -180,8 +203,9 @@ The context above includes:
 Give 3-4 direct sentences:
 1. Address their question directly - no empathy theatre
 2. One astrological insight from the data above that actually applies to their situation
-3. Specific action to take today
-4. Timing note if relevant (moon phase, retrograde, transit)
+3. If a friend is mentioned, consider their astrological compatibility and relationship dynamics
+4. Specific action to take today
+5. Timing note if relevant (moon phase, retrograde, transit)
 
 Be real. Use the actual astrological data. Skip generic "embrace your power" bullshit."""
 
