@@ -312,23 +312,33 @@ Be real. Use the actual astrological data. Skip generic "embrace your power" bul
         
         # Return friend data from our in-memory friend_data if available, 
         # even if database save failed (columns might not exist yet)
-        return CounselResponse(
-            id=counsel["id"],
-            question=counsel["question"],
-            answer=counsel["answer"],
-            category=counsel["category"],
-            context={
+        response_data = {
+            "id": counsel["id"],
+            "question": counsel["question"],
+            "answer": counsel["answer"],
+            "category": counsel["category"],
+            "context": {
                 "sun_sign": counsel["sun_sign"],
                 "moon_sign": counsel["moon_sign"],
                 "mood": counsel["mood"],
                 "energy_level": counsel["energy_level"],
             },
-            asked_at=datetime.fromisoformat(counsel["asked_at"].replace("Z", "+00:00")),
-            friend_id=str(request.friend_id) if request.friend_id and friend_data else None,
-            friend_nickname=friend_data["nickname"] if friend_data else None,
-            friend_sun_sign=friend_data["sun_sign"] if friend_data else None,
-            friend_moon_sign=friend_data.get("moon_sign") if friend_data else None
-        )
+            "asked_at": datetime.fromisoformat(counsel["asked_at"].replace("Z", "+00:00")),
+        }
+        
+        # Add friend data if available
+        if friend_data:
+            response_data["friend_id"] = str(request.friend_id)
+            response_data["friend_nickname"] = friend_data.get("nickname")
+            response_data["friend_sun_sign"] = friend_data.get("sun_sign")
+            response_data["friend_moon_sign"] = friend_data.get("moon_sign")
+        else:
+            response_data["friend_id"] = None
+            response_data["friend_nickname"] = None
+            response_data["friend_sun_sign"] = None
+            response_data["friend_moon_sign"] = None
+        
+        return CounselResponse(**response_data)
         
     except HTTPException:
         raise
