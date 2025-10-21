@@ -103,6 +103,7 @@ async def ask_question(
         
         # Get friend data if friend_id provided
         friend_context = ""
+        friend = None
         if request.friend_id:
             friend_result = supabase_service.client.table("friends").select("*").eq(
                 "id", str(request.friend_id)
@@ -181,16 +182,50 @@ FRIEND CONTEXT:
             print(f"⚠️  KB retrieval error: {e}")
             enriched_context = ""
         
-        # Generate AI guidance
-        prompt = f"""Cosmic counselor giving straightforward advice based on real-time astrological data.
+        # Generate AI guidance with clear friend context handling
+        if friend_context:
+            # Question is about a friend - make this VERY clear to the AI
+            prompt = f"""Cosmic counselor giving straightforward advice about a SPECIFIC PERSON based on real-time astrological data.
+
+IMPORTANT: This question is about {friend['nickname']}, NOT the user asking the question.
+
+USER (the person asking):
+- Sun: {user.sun_sign}
+- Moon: {user.moon_sign or 'Unknown'}
+{f"- Mood: {check_in['mood']}" if check_in else ''}
+{f"- Energy: {check_in['energy_level']}/10" if check_in else ''}
+
+{friend_context}
+
+Question: "{request.question}"
+{f"Category: {request.category}" if request.category else ''}
+
+{enriched_context if enriched_context else ""}
+
+The context above includes:
+- Today's horoscopes from multiple astrologers (Astrostyle, Cafe Astrology)
+- Current planetary positions and transits
+- Moon phase and current moon sign
+- Planets in retrograde (if any)
+- Spiritual wisdom and timing guidance
+
+Give 3-4 direct sentences:
+1. Address the question about {friend['nickname']} directly - use their name!
+2. Analyze {friend['nickname']}'s astrological profile ({friend['sun_sign']} sun{f", {friend['moon_sign']} moon" if friend['moon_sign'] else ""})
+3. Consider compatibility/dynamics between {user.sun_sign} (user) and {friend['sun_sign']} ({friend['nickname']})
+4. Specific insight or action based on today's astrological data
+5. Reference {friend['nickname']} by name throughout the answer
+
+Be real. Use the actual astrological data. Make it clear this is about {friend['nickname']}, not the user."""
+        else:
+            # Question is about the user themselves
+            prompt = f"""Cosmic counselor giving straightforward advice based on real-time astrological data.
 
 Profile:
 - Sun: {user.sun_sign}
 - Moon: {user.moon_sign or 'Unknown'}
 {f"- Mood: {check_in['mood']}" if check_in else ''}
 {f"- Energy: {check_in['energy_level']}/10" if check_in else ''}
-
-{friend_context if friend_context else ""}
 
 Question: "{request.question}"
 {f"Category: {request.category}" if request.category else ''}
@@ -207,9 +242,8 @@ The context above includes:
 Give 3-4 direct sentences:
 1. Address their question directly - no empathy theatre
 2. One astrological insight from the data above that actually applies to their situation
-3. If a friend is mentioned, consider their astrological compatibility and relationship dynamics
-4. Specific action to take today
-5. Timing note if relevant (moon phase, retrograde, transit)
+3. Specific action to take today
+4. Timing note if relevant (moon phase, retrograde, transit)
 
 Be real. Use the actual astrological data. Skip generic "embrace your power" bullshit."""
 
