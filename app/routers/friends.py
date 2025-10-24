@@ -42,6 +42,18 @@ class AddFriendRequest(BaseModel):
     notes: str | None = None
 
 
+class UpdateFriendRequest(BaseModel):
+    """Update friend request."""
+    nickname: str | None = None
+    sun_sign: str | None = None
+    moon_sign: str | None = None
+    birth_location: str | None = None
+    current_location: str | None = None
+    age: int | None = None
+    relationship_type: str | None = None
+    notes: str | None = None
+
+
 class CompatibilityReportResponse(BaseModel):
     """Compatibility report response."""
     report: str
@@ -122,24 +134,65 @@ async def add_friend(
         raise HTTPException(status_code=500, detail=f"Failed to add friend: {str(e)}")
 
 
+@router.patch("/{friend_id}", response_model=Friend)
+async def update_friend(
+    friend_id: str,
+    request: UpdateFriendRequest,
+    user_id: CurrentUserId,
+) -> Friend:
+    """Update a friend's information."""
+    try:
+        supabase_service = SupabaseService()
+
+        # Verify ownership
+        friend_response = supabase_service.client.table("friends").select("*").eq(
+            "id", friend_id
+        ).eq("user_id", user_id).execute()
+
+        if not friend_response.data:
+            raise HTTPException(status_code=404, detail="Friend not found")
+
+        # Build update dict with only provided fields
+        update_data = {k: v for k, v in request.dict().items() if v is not None}
+
+        if not update_data:
+            # No fields to update, return existing friend
+            return Friend(**friend_response.data[0])
+
+        # Update the friend
+        response = supabase_service.client.table("friends").update(
+            update_data
+        ).eq("id", friend_id).execute()
+
+        if not response.data:
+            raise Exception("Failed to update friend")
+
+        return Friend(**response.data[0])
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update friend: {str(e)}")
+
+
 @router.delete("/{friend_id}")
 async def delete_friend(friend_id: str, user_id: CurrentUserId):
     """Delete a friend."""
     try:
         supabase_service = SupabaseService()
-        
+
         # Verify ownership
         friend = supabase_service.client.table("friends").select("*").eq(
             "id", friend_id
         ).eq("user_id", user_id).execute()
-        
+
         if not friend.data:
             raise HTTPException(status_code=404, detail="Friend not found")
-        
+
         supabase_service.client.table("friends").delete().eq("id", friend_id).execute()
-        
+
         return {"message": "Friend deleted successfully"}
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -417,21 +470,22 @@ async def generate_social_recommendations(
 
         prompt = f"""You are a cosmic social advisor. Based on today's astrological energy, recommend which people from this list should interact with today.
 
-**User:** {user.name} (**{user.sun_sign}**{' • ' + user.moon_sign + ' moon' if user.moon_sign else ''})
+**Your Profile:** {user.name} (**{user.sun_sign}**{' • ' + user.moon_sign + ' moon' if user.moon_sign else ''})
 
-**Connections:**
+**Your Connections:**
 {friends_list}
 
 {enriched_context}
 
-Consider today's cosmic energy ({today.strftime('%A, %B %d')}), planetary transits, and moon phase.
+Today is {today.strftime('%A, %B %d')}. Consider current planetary transits and moon phase.
 
-Provide 2-3 specific recommendations for TODAY:
-1. Which 1-2 people to reach out to and WHY (based on sign compatibility + today's transits)
-2. What TYPE of interaction would be most beneficial (call, text, coffee, deep conversation, light chat, etc.)
-3. One person to maybe give space today if energies don't align
+Create a short, engaging social guidance for today formatted in 2-3 small paragraphs:
 
-Be practical and specific. Use **bold** for names and signs. Use 1-2 relevant emojis. Keep it conversational and helpful."""
+**Paragraph 1:** Lead with an emoji that captures today's social energy, then 1-2 sentences about the general vibe.
+
+**Paragraph 2:** Recommend 1-2 specific people to connect with and WHY (based on their signs + today's cosmic conditions). Suggest the TYPE of interaction (coffee ☕, deep talk 💭, light text ✨, etc.) with inline emojis.
+
+Use **bold** for names and zodiac signs. Add emojis naturally throughout (3-5 total). NO ALL CAPS. Keep paragraphs SHORT (1-2 sentences each). Add line breaks between paragraphs. Write like you're texting a friend cosmic advice."""
 
         bedrock_runtime = boto3.client(
             "bedrock-runtime",
@@ -444,7 +498,7 @@ Be practical and specific. Use **bold** for names and signs. Use 1-2 relevant em
             modelId="us.anthropic.claude-3-5-sonnet-20241022-v2:0",
             body=json.dumps({
                 "anthropic_version": "bedrock-2023-05-31",
-                "max_tokens": 800,
+                "max_tokens": 400,
                 "temperature": 0.8,
                 "messages": [{
                     "role": "user",
