@@ -42,7 +42,7 @@ async def get_user_stats(user_id: CurrentUserId) -> UserStatsResponse:
             raise HTTPException(status_code=404, detail="User not found")
 
         member_since = user.created_at
-        days_active = (date.today() - member_since.date()).days
+        days_active = (date.today() - member_since.date()).days + 1
 
         # Get total reflections count
         reflections_result = supabase_service.client.table("daily_reports").select(
