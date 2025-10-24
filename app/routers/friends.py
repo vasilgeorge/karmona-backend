@@ -50,6 +50,12 @@ class CompatibilityReportResponse(BaseModel):
     generated_today: bool
 
 
+class SocialRecommendationsResponse(BaseModel):
+    """Social recommendations response."""
+    recommendations: str
+    generated_today: bool
+
+
 @router.get("/", response_model=List[Friend])
 async def get_friends(user_id: CurrentUserId) -> List[Friend]:
     """Get all friends for the current user."""
@@ -308,3 +314,165 @@ Be direct and practical. Use the actual astrological data. Use **bold** for sign
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Compatibility generation failed: {str(e)}")
+
+
+@router.post("/social-recommendations", response_model=SocialRecommendationsResponse)
+async def generate_social_recommendations(
+    user_id: CurrentUserId,
+) -> SocialRecommendationsResponse:
+    """
+    Generate daily social recommendations for which friends to connect with.
+    Cached per day - returns same recommendations for the day.
+    """
+    try:
+        supabase_service = SupabaseService()
+        astrology_service = AstrologyService()
+
+        # Get user
+        user = await supabase_service.get_user(user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        # Get all friends
+        friends_response = supabase_service.client.table("friends").select("*").eq(
+            "user_id", user_id
+        ).order("created_at", desc=True).execute()
+
+        if not friends_response.data or len(friends_response.data) == 0:
+            raise HTTPException(
+                status_code=404,
+                detail="No connections found. Add some friends first to get social recommendations."
+            )
+
+        friends = friends_response.data
+
+        # Check for cached recommendations today
+        today = date.today()
+        cached_recs = supabase_service.client.table("social_recommendations").select("*").eq(
+            "user_id", user_id
+        ).eq("generated_date", today.isoformat()).execute()
+
+        if cached_recs.data and len(cached_recs.data) > 0:
+            print(f"✅ Returning cached social recommendations")
+            return SocialRecommendationsResponse(
+                recommendations=cached_recs.data[0]["recommendations"],
+                generated_today=True,
+            )
+
+        # Get today's astrological context from KB
+        enriched_context = ""
+        try:
+            bedrock_agent_runtime = boto3.client(
+                'bedrock-agent-runtime',
+                region_name=settings.aws_region,
+                aws_access_key_id=settings.aws_access_key_id,
+                aws_secret_access_key=settings.aws_secret_access_key,
+            )
+
+            # Build search query for today's cosmic energy
+            search_query = f"{user.sun_sign} daily horoscope social interactions moon phase today"
+
+            print(f"🔍 Searching KB for social recommendations context: {search_query}")
+
+            response = bedrock_agent_runtime.retrieve(
+                knowledgeBaseId=settings.bedrock_knowledge_base_id,
+                retrievalQuery={'text': search_query},
+                retrievalConfiguration={
+                    'vectorSearchConfiguration': {
+                        'numberOfResults': 3,
+                    }
+                }
+            )
+
+            # Format results
+            retrieved_results = response.get('retrievalResults', [])
+            context_chunks = []
+
+            for i, result in enumerate(retrieved_results, 1):
+                if result.get('score', 0) > 0.3:
+                    try:
+                        doc = json.loads(result['content']['text'])
+                        content = doc.get('content', result['content']['text'])
+                        content = content.replace('\n', ' ').replace('\r', ' ').strip()
+                        context_chunks.append(content)
+                    except:
+                        sanitized = result['content']['text'].replace('\n', ' ').strip()
+                        context_chunks.append(sanitized)
+
+            if context_chunks:
+                enriched_context = "\n\nToday's astrological context:\n" + "\n".join(context_chunks)
+                print(f"✅ Retrieved {len(context_chunks)} social insights")
+
+        except Exception as e:
+            print(f"⚠️  KB retrieval error: {e}")
+
+        # Generate social recommendations
+        print(f"🤖 Generating social recommendations for {user.name}")
+
+        # Format friends list
+        friends_list = "\n".join([
+            f"- **{f['nickname']}** ({f['sun_sign']}{' • ' + f['moon_sign'] + ' moon' if f['moon_sign'] else ''}) - {f['relationship_type']}"
+            for f in friends
+        ])
+
+        prompt = f"""You are a cosmic social advisor. Based on today's astrological energy, recommend which people from this list should interact with today.
+
+**User:** {user.name} (**{user.sun_sign}**{' • ' + user.moon_sign + ' moon' if user.moon_sign else ''})
+
+**Connections:**
+{friends_list}
+
+{enriched_context}
+
+Consider today's cosmic energy ({today.strftime('%A, %B %d')}), planetary transits, and moon phase.
+
+Provide 2-3 specific recommendations for TODAY:
+1. Which 1-2 people to reach out to and WHY (based on sign compatibility + today's transits)
+2. What TYPE of interaction would be most beneficial (call, text, coffee, deep conversation, light chat, etc.)
+3. One person to maybe give space today if energies don't align
+
+Be practical and specific. Use **bold** for names and signs. Use 1-2 relevant emojis. Keep it conversational and helpful."""
+
+        bedrock_runtime = boto3.client(
+            "bedrock-runtime",
+            region_name=settings.aws_region,
+            aws_access_key_id=settings.aws_access_key_id,
+            aws_secret_access_key=settings.aws_secret_access_key,
+        )
+
+        response = bedrock_runtime.invoke_model(
+            modelId="us.anthropic.claude-3-5-sonnet-20241022-v2:0",
+            body=json.dumps({
+                "anthropic_version": "bedrock-2023-05-31",
+                "max_tokens": 800,
+                "temperature": 0.8,
+                "messages": [{
+                    "role": "user",
+                    "content": prompt
+                }]
+            }),
+        )
+
+        response_body = json.loads(response["body"].read())
+        recommendations_text = response_body["content"][0]["text"]
+
+        # Cache in database
+        try:
+            supabase_service.client.table("social_recommendations").insert({
+                "user_id": user_id,
+                "recommendations": recommendations_text,
+                "generated_date": today.isoformat(),
+            }).execute()
+            print(f"✅ Cached social recommendations")
+        except Exception as db_error:
+            print(f"⚠️  Failed to cache recommendations: {db_error}")
+
+        return SocialRecommendationsResponse(
+            recommendations=recommendations_text,
+            generated_today=True,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Social recommendations generation failed: {str(e)}")

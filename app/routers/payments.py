@@ -38,6 +38,7 @@ class SubscriptionStatusResponse(BaseModel):
     subscription_status: str
     subscription_tier: str
     period_end: str | None
+    cancel_at_period_end: bool
 
 
 @router.post("/create-checkout-session", response_model=CheckoutSessionResponse)
@@ -154,7 +155,8 @@ async def get_subscription_status(
             is_premium=user.subscription_tier == "premium" and user.subscription_status == "active",
             subscription_status=user.subscription_status or "free",
             subscription_tier=user.subscription_tier or "free",
-            period_end=user.subscription_period_end.isoformat() if user.subscription_period_end else None
+            period_end=user.subscription_period_end.isoformat() if user.subscription_period_end else None,
+            cancel_at_period_end=user.cancel_at_period_end or False
         )
         
     except HTTPException:
