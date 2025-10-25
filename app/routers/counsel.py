@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 
 from app.core.auth import CurrentUserId
 from app.services import SupabaseService, BedrockService
-from app.services.kb_retrieval_service import KBRetrievalService
+from app.services.supabase_vector_service import SupabaseVectorService
 
 router = APIRouter(prefix="/counsel", tags=["counsel"])
 
@@ -63,7 +63,7 @@ async def ask_question(
     try:
         supabase_service = SupabaseService()
         bedrock_service = BedrockService()
-        kb_service = KBRetrievalService()
+        vector_service = SupabaseVectorService()
         
         # Get user data
         user = await supabase_service.get_user(user_id)

@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException
 from app.core.auth import CurrentUserId
 from app.models.schemas import DailyInputRequest, ReflectionResponse
 from app.services import SupabaseService, AstrologyService, BedrockService
-from app.services.kb_retrieval_service import KBRetrievalService
+from app.services.supabase_vector_service import SupabaseVectorService
 
 router = APIRouter(prefix="/reflection", tags=["reflection"])
 
@@ -59,7 +59,7 @@ async def generate_reflection(
         supabase_service = SupabaseService()
         astrology_service = AstrologyService()
         bedrock_service = BedrockService()
-        kb_retrieval_service = KBRetrievalService()
+        vector_service = SupabaseVectorService()
 
         # Get user data (using authenticated user_id from JWT)
         user = await supabase_service.get_user(user_id)
@@ -153,7 +153,7 @@ async def generate_reflection(
         # NEW: Retrieve enriched context from Knowledge Base (with timeout)
         print(f"🔍 Retrieving KB context for {user.sun_sign}...")
         try:
-            enriched_context = await kb_retrieval_service.retrieve_context(
+            enriched_context = await vector_service.retrieve_context(
                 sun_sign=user.sun_sign,
                 moon_sign=user.moon_sign,
                 mood=request.mood,

@@ -69,18 +69,23 @@ async def generate_journey_summary(
                 f"Actions: {', '.join(report.actions[:3])}"
             )
         
-        prompt = f"""Analyze {user.name}'s spiritual journey over the past {len(reports)} days:
+        prompt = f"""You are an encouraging spiritual guide analyzing {user.name}'s journey.
 
+**Data available:**
 {chr(10).join(reflections_text)}
 
 **{user.name}** is a **{user.sun_sign}**{' with Moon in ' + user.moon_sign if user.moon_sign else ''}.
 
-Write a warm, insightful summary (2-3 paragraphs) that:
-1. Identifies patterns in their moods and actions
-2. Highlights growth or themes in their journey  
-3. Offers gentle guidance based on their astrology
+IMPORTANT: You MUST provide a warm, insightful summary NO MATTER WHAT. Even if data is limited or has gaps, ALWAYS create a meaningful summary based on what you see. NEVER apologize or say you can't analyze it. Work with whatever data you have.
 
-Use **bold** for key insights, *italics* for emphasis, and 1-2 emojis. Keep it encouraging and specific to them."""
+Write a warm, encouraging summary (2-3 short paragraphs) that:
+1. Identifies ANY patterns you can see in their moods, actions, or karma scores
+2. Highlights growth, themes, or interesting moments in their journey
+3. Offers gentle, specific guidance based on their {user.sun_sign} nature
+
+If data is limited: Focus on the days you DO have and make meaningful observations about those specific moments.
+
+Use **bold** for key insights, *italics* for emphasis, and 1-2 emojis. Be encouraging and specific. NO apologies, NO disclaimers about limited data. Just insights."""
         
         # Generate summary using Claude
         import json

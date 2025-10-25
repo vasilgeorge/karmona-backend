@@ -13,6 +13,7 @@ from app.services.browser_scraper import BrowserScraper
 from app.services.scraping_sources import get_enabled_sources, count_total_scrapes
 from app.services.ephemeris_service import EphemerisService
 from app.services.nasa_apod_service import NASAAPODService
+from app.services.supabase_vector_service import SupabaseVectorService
 
 
 class DailyScraper:
@@ -26,6 +27,7 @@ class DailyScraper:
         self.browser_scraper = BrowserScraper()
         self.ephemeris_service = EphemerisService()
         self.nasa_apod_service = NASAAPODService()
+        self.vector_service = SupabaseVectorService()
         self.s3_client = boto3.client(
             's3',
             region_name=settings.aws_region,
@@ -90,15 +92,15 @@ class DailyScraper:
             print(f"❌ Error scraping {url}: {e}")
             return None
     
-    def _upload_to_s3(self, document: Dict[str, Any], today: date, index: int) -> bool:
+    async def _upload_to_s3_and_supabase(self, document: Dict[str, Any], today: date, index: int) -> bool:
         """
-        Upload document to S3 in Knowledge Base-friendly format.
-        
+        Upload document to S3 (for backup) AND Supabase pgvector (for retrieval).
+
         Args:
             document: Scraped document with content and metadata
             today: Current date
             index: Unique index for this document
-            
+
         Returns:
             True if upload successful
         """
@@ -106,38 +108,51 @@ class DailyScraper:
             # Create filename with date and context (for sign-specific)
             source = document['source']
             context = document.get('context', 'general')
-            
+
             if context != "general":
                 # Sign-specific: source_sign_date.json
                 filename = f"daily/{today.isoformat()}/{source}_{context}.json"
+                doc_id = f"{source}-{context}-{today.isoformat()}"
             else:
                 # General: source_date.json
                 filename = f"daily/{today.isoformat()}/{source}.json"
-            
-            # Format document for Knowledge Base
-            kb_document = {
-                "id": f"{source}-{today.isoformat()}",
+                doc_id = f"{source}-{today.isoformat()}"
+
+            # Format document metadata
+            metadata = {
                 "date": today.isoformat(),
                 "source": document['source'],
                 "url": document['url'],
-                "content": document['content'],
-                "metadata": {
-                    "tags": document.get('tags', []),
-                    "scraped_at": datetime.utcnow().isoformat(),
-                }
+                "tags": document.get('tags', []),
+                "scraped_at": datetime.utcnow().isoformat(),
+                "context": context,
             }
-            
-            # Upload to S3
+
+            # 1. Upload to S3 (for backup/compliance)
+            kb_document = {
+                "id": doc_id,
+                "content": document['content'],
+                "metadata": metadata,
+            }
+
             self.s3_client.put_object(
                 Bucket=settings.s3_astrology_bucket,
                 Key=filename,
                 Body=json.dumps(kb_document, indent=2),
                 ContentType='application/json',
             )
-            
             print(f"✅ Uploaded {filename} to S3")
+
+            # 2. Store in Supabase pgvector (for fast retrieval)
+            await self.vector_service.store_document(
+                document_id=doc_id,
+                content=document['content'],
+                metadata=metadata,
+            )
+            print(f"✅ Stored {doc_id} in Supabase pgvector")
+
             return True
-            
+
         except Exception as e:
             print(f"❌ Failed to upload {source}: {e}")
             return False
@@ -158,7 +173,7 @@ class DailyScraper:
             print(f"❌ Failed to sync KB: {e}")
             return False
     
-    def run_daily_scrape(self) -> Dict[str, Any]:
+    async def run_daily_scrape(self) -> Dict[str, Any]:
         """
         Main method: Run full daily scraping pipeline.
         
@@ -252,9 +267,9 @@ class DailyScraper:
                         print(f"      {content_preview}")
                         print(f"      {'-' * 50}")
                         print(f"      Full length: {len(document['content'])} chars")
-                        
-                        # Upload to S3
-                        if self._upload_to_s3(document, today, document_index):
+
+                        # Upload to S3 AND Supabase
+                        if await self._upload_to_s3_and_supabase(document, today, document_index):
                             results['scraped'].append(f"{source_config.name}_{context}")
                             results['uploaded'] += 1
                             document_index += 1

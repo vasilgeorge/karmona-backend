@@ -2,10 +2,13 @@
 Payments Router
 
 Handles Stripe subscription checkout, webhooks, and subscription management.
+Also handles Apple In-App Purchase verification for iOS subscriptions.
 """
 
 from fastapi import APIRouter, HTTPException, Request, Header
 from pydantic import BaseModel
+import httpx
+from datetime import datetime
 
 from app.core.auth import CurrentUserId
 from app.core.config import settings
@@ -370,3 +373,189 @@ async def stripe_webhook(
     except Exception as e:
         print(f"❌ Webhook error: {str(e)}")
         raise HTTPException(status_code=400, detail=f"Webhook error: {str(e)}")
+
+
+# ============================================================================
+# Apple In-App Purchase Endpoints
+# ============================================================================
+
+class ApplePurchaseRequest(BaseModel):
+    """Request to verify Apple IAP receipt"""
+    receipt: str
+    productId: str
+    transactionId: str
+
+
+class ApplePurchaseResponse(BaseModel):
+    """Apple purchase verification response"""
+    verified: bool
+    is_premium: bool
+    expires_at: str | None
+
+
+@router.post("/verify-apple-purchase", response_model=ApplePurchaseResponse)
+async def verify_apple_purchase(
+    request: ApplePurchaseRequest,
+    user_id: CurrentUserId,
+) -> ApplePurchaseResponse:
+    """
+    Verify Apple In-App Purchase receipt and activate premium subscription.
+
+    This endpoint:
+    1. Verifies the receipt with Apple's servers
+    2. Checks if it's a valid subscription
+    3. Updates the user's subscription status in the database
+    """
+    try:
+        supabase_service = SupabaseService()
+
+        # Get user
+        user = await supabase_service.get_user(user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        # Verify receipt with Apple
+        verification_result = await verify_apple_receipt(request.receipt)
+
+        if not verification_result["verified"]:
+            raise HTTPException(
+                status_code=400,
+                detail="Receipt verification failed"
+            )
+
+        # Extract subscription info from verification result
+        latest_receipt_info = verification_result.get("latest_receipt_info")
+        if not latest_receipt_info or len(latest_receipt_info) == 0:
+            raise HTTPException(
+                status_code=400,
+                detail="No subscription found in receipt"
+            )
+
+        # Get the most recent subscription
+        subscription = latest_receipt_info[0]
+
+        # Check if subscription is active
+        expires_date_ms = int(subscription.get("expires_date_ms", 0))
+        expires_at = datetime.fromtimestamp(expires_date_ms / 1000)
+        is_active = expires_at > datetime.now()
+
+        # Update user's subscription in database
+        update_data = {
+            "subscription_tier": "premium" if is_active else "free",
+            "subscription_status": "active" if is_active else "expired",
+            "subscription_period_end": expires_at.isoformat(),
+            "apple_transaction_id": request.transactionId,
+            "apple_product_id": request.productId,
+        }
+
+        print(f"💾 Updating user {user_id} with Apple IAP: {update_data}")
+
+        result = supabase_service.client.table("users").update(update_data).eq(
+            "id", str(user_id)
+        ).execute()
+
+        print(f"✅ Apple IAP verified for user {user_id}")
+
+        return ApplePurchaseResponse(
+            verified=True,
+            is_premium=is_active,
+            expires_at=expires_at.isoformat() if is_active else None
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Apple IAP verification error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to verify Apple purchase: {str(e)}"
+        )
+
+
+@router.post("/restore-purchases")
+async def restore_apple_purchases(user_id: CurrentUserId):
+    """
+    Restore Apple In-App Purchases for a user.
+
+    Note: On iOS, the client should send the latest receipt which contains
+    all purchase history. This endpoint will validate and restore active subscriptions.
+    """
+    try:
+        supabase_service = SupabaseService()
+
+        # Get user
+        user = await supabase_service.get_user(user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        # Check if user has Apple transaction ID (previous purchase)
+        if not user.apple_transaction_id:
+            return {
+                "status": "no_purchases",
+                "hasPremium": False,
+                "message": "No previous purchases found"
+            }
+
+        # For now, just return current subscription status
+        # In a full implementation, you'd fetch and verify the latest receipt
+        is_premium = (
+            user.subscription_tier == "premium" and
+            user.subscription_status == "active"
+        )
+
+        return {
+            "status": "success",
+            "hasPremium": is_premium,
+            "subscription_status": user.subscription_status,
+            "expires_at": user.subscription_period_end.isoformat() if user.subscription_period_end else None
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to restore purchases: {str(e)}"
+        )
+
+
+async def verify_apple_receipt(receipt_data: str) -> dict:
+    """
+    Verify Apple receipt with Apple's verification servers.
+
+    Uses the production server first, then falls back to sandbox for testing.
+    """
+    # Apple's verification endpoints
+    PRODUCTION_URL = "https://buy.itunes.apple.com/verifyReceipt"
+    SANDBOX_URL = "https://sandbox.itunes.apple.com/verifyReceipt"
+
+    request_body = {
+        "receipt-data": receipt_data,
+        "password": settings.apple_shared_secret if hasattr(settings, 'apple_shared_secret') else "",
+        "exclude-old-transactions": True
+    }
+
+    async with httpx.AsyncClient() as client:
+        # Try production first
+        response = await client.post(PRODUCTION_URL, json=request_body, timeout=10.0)
+        result = response.json()
+
+        # If status is 21007, receipt is from sandbox - try sandbox endpoint
+        if result.get("status") == 21007:
+            print("📱 Receipt is from sandbox, trying sandbox endpoint")
+            response = await client.post(SANDBOX_URL, json=request_body, timeout=10.0)
+            result = response.json()
+
+        # Status 0 means success
+        if result.get("status") == 0:
+            return {
+                "verified": True,
+                "latest_receipt_info": result.get("latest_receipt_info", []),
+                "pending_renewal_info": result.get("pending_renewal_info", [])
+            }
+        else:
+            print(f"❌ Apple receipt verification failed with status {result.get('status')}")
+            return {
+                "verified": False,
+                "error": f"Verification failed with status {result.get('status')}"
+            }
