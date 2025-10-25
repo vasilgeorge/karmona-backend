@@ -4,6 +4,7 @@ Scrapes astrology sites and uploads to S3 for Knowledge Base
 """
 
 import json
+import asyncio
 from datetime import date, datetime
 from typing import List, Dict, Any
 import boto3
@@ -92,7 +93,7 @@ class DailyScraper:
             print(f"❌ Error scraping {url}: {e}")
             return None
     
-    async def _upload_to_s3_and_supabase(self, document: Dict[str, Any], today: date, index: int) -> bool:
+    def _upload_to_s3_and_supabase(self, document: Dict[str, Any], today: date, index: int) -> bool:
         """
         Upload document to S3 (for backup) AND Supabase pgvector (for retrieval).
 
@@ -144,12 +145,20 @@ class DailyScraper:
             print(f"✅ Uploaded {filename} to S3")
 
             # 2. Store in Supabase pgvector (for fast retrieval)
-            await self.vector_service.store_document(
-                document_id=doc_id,
-                content=document['content'],
-                metadata=metadata,
-            )
-            print(f"✅ Stored {doc_id} in Supabase pgvector")
+            # Run async operation in sync context
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                loop.run_until_complete(
+                    self.vector_service.store_document(
+                        document_id=doc_id,
+                        content=document['content'],
+                        metadata=metadata,
+                    )
+                )
+                print(f"✅ Stored {doc_id} in Supabase pgvector")
+            finally:
+                loop.close()
 
             return True
 
@@ -173,7 +182,7 @@ class DailyScraper:
             print(f"❌ Failed to sync KB: {e}")
             return False
     
-    async def run_daily_scrape(self) -> Dict[str, Any]:
+    def run_daily_scrape(self) -> Dict[str, Any]:
         """
         Main method: Run full daily scraping pipeline.
         
@@ -269,7 +278,7 @@ class DailyScraper:
                         print(f"      Full length: {len(document['content'])} chars")
 
                         # Upload to S3 AND Supabase
-                        if await self._upload_to_s3_and_supabase(document, today, document_index):
+                        if self._upload_to_s3_and_supabase(document, today, document_index):
                             results['scraped'].append(f"{source_config.name}_{context}")
                             results['uploaded'] += 1
                             document_index += 1

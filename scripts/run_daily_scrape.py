@@ -15,21 +15,21 @@ def main():
     print("=" * 60)
     print("This will:")
     print("  1. Scrape astrology sites (NY Post, Cafe Astrology, etc.)")
-    print("  2. Upload to S3")
-    print("  3. Sync Knowledge Base")
+    print("  2. Upload to S3 AND Supabase pgvector")
+    print("  3. Sync Knowledge Base (optional)")
     print("=" * 60)
     print()
-    
+
     scraper = DailyScraper()
     results = scraper.run_daily_scrape()
-    
+
     print("\n" + "=" * 60)
     print("📊 FINAL RESULTS:")
     print("=" * 60)
     print(f"Date: {results['date']}")
     print(f"Successfully scraped: {', '.join(results['scraped']) if results['scraped'] else 'None'}")
     print(f"Failed: {', '.join(results['failed']) if results['failed'] else 'None'}")
-    print(f"Uploaded to S3: {results['uploaded']} documents")
+    print(f"Uploaded to S3 + Supabase: {results['uploaded']} documents")
     print("=" * 60)
 
 
