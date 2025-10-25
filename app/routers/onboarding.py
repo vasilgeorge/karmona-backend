@@ -46,6 +46,7 @@ async def onboard_user(
                 "birth_place": request.birth_place,
                 "sun_sign": astrology_data.sun_sign,
                 "moon_sign": astrology_data.moon_sign,
+                "preferred_checkin_time": request.preferred_checkin_time,
             }
             
             result = supabase_service.client.table("users").update(data).eq(
@@ -85,6 +86,7 @@ async def onboard_user(
                 sun_sign=astrology_data.sun_sign,
                 moon_sign=astrology_data.moon_sign,
                 user_id=user_id,  # Use the auth user_id from JWT token
+                preferred_checkin_time=request.preferred_checkin_time,
             )
 
         return OnboardingResponse(

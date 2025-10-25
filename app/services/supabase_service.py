@@ -30,6 +30,7 @@ class SupabaseService:
         sun_sign: str,
         moon_sign: str | None,
         user_id: str | None = None,
+        preferred_checkin_time: str | None = None,
     ) -> UserProfile:
         """Create a new user in the database."""
         data = {
@@ -40,6 +41,7 @@ class SupabaseService:
             "birth_place": birth_place,
             "sun_sign": sun_sign,
             "moon_sign": moon_sign,
+            "preferred_checkin_time": preferred_checkin_time,
         }
         
         # If user_id is provided (from auth), use it
@@ -62,6 +64,7 @@ class SupabaseService:
             sun_sign=user_data["sun_sign"],
             moon_sign=user_data.get("moon_sign"),
             created_at=datetime.fromisoformat(user_data["created_at"]),
+            preferred_checkin_time=user_data.get("preferred_checkin_time", "09:00:00"),
             # Stripe subscription fields
             stripe_customer_id=user_data.get("stripe_customer_id"),
             subscription_status=user_data.get("subscription_status", "free"),
@@ -89,6 +92,7 @@ class SupabaseService:
             sun_sign=user_data["sun_sign"],
             moon_sign=user_data.get("moon_sign"),
             created_at=datetime.fromisoformat(user_data["created_at"]),
+            preferred_checkin_time=user_data.get("preferred_checkin_time", "09:00:00"),
             # Stripe subscription fields
             stripe_customer_id=user_data.get("stripe_customer_id"),
             subscription_status=user_data.get("subscription_status", "free"),

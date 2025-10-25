@@ -25,6 +25,11 @@ class OnboardingRequest(BaseModel):
         description="Birth time in HH:MM format (24h)",
     )
     birth_place: str | None = Field(None, max_length=200, description="Birth city/location")
+    preferred_checkin_time: str | None = Field(
+        None,
+        pattern=r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+        description="Preferred daily check-in time in HH:MM:SS format (24h)",
+    )
 
     @field_validator("birthdate")
     @classmethod
@@ -137,7 +142,8 @@ class UserProfile(BaseModel):
     sun_sign: str
     moon_sign: str | None = None
     created_at: datetime
-    
+    preferred_checkin_time: str = "09:00:00"  # HH:MM:SS format
+
     # Stripe subscription fields
     stripe_customer_id: str | None = None
     subscription_status: str = "free"
