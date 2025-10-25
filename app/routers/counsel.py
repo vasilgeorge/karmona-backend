@@ -122,65 +122,9 @@ FRIEND CONTEXT:
 - Notes: {friend['notes'] or 'None'}
 """
         
-        # Get cosmic context from KB
-        # Build a semantic query from the user's question + their profile
-        try:
-            # Use retrieve() directly with a custom query for counsel
-            import boto3
-            from app.core.config import settings
-
-            bedrock_agent_runtime = boto3.client(
-                'bedrock-agent-runtime',
-                region_name=settings.aws_region,
-                aws_access_key_id=settings.aws_access_key_id,
-                aws_secret_access_key=settings.aws_secret_access_key,
-            )
-
-            # Build search query: user's question + their astrological profile
-            search_query = f"{user.sun_sign} {request.question}"
-            if user.moon_sign:
-                search_query = f"{search_query} {user.moon_sign} moon"
-            if request.category:
-                search_query = f"{search_query} {request.category}"
-
-            print(f"🔍 Searching KB for counsel: {search_query}")
-
-            response = bedrock_agent_runtime.retrieve(
-                knowledgeBaseId=settings.bedrock_knowledge_base_id,
-                retrievalQuery={'text': search_query},
-                retrievalConfiguration={
-                    'vectorSearchConfiguration': {
-                        'numberOfResults': 5,
-                    }
-                }
-            )
-
-            # Format results
-            retrieved_results = response.get('retrievalResults', [])
-            context_chunks = []
-
-            for i, result in enumerate(retrieved_results, 1):
-                if result.get('score', 0) > 0.3:
-                    try:
-                        import json
-                        doc = json.loads(result['content']['text'])
-                        content = doc.get('content', result['content']['text'])
-                        content = content.replace('\n', ' ').replace('\r', ' ').strip()
-                        context_chunks.append(f"Insight {i}: {content}")
-                    except:
-                        sanitized = result['content']['text'].replace('\n', ' ').strip()
-                        context_chunks.append(f"Insight {i}: {sanitized}")
-
-            if context_chunks:
-                enriched_context = "ASTROLOGICAL CONTEXT:\n" + "\n".join(context_chunks)
-                print(f"✅ Retrieved {len(context_chunks)} insights from KB")
-            else:
-                enriched_context = ""
-                print("⚠️  No relevant KB results")
-
-        except Exception as e:
-            print(f"⚠️  KB retrieval error: {e}")
-            enriched_context = ""
+        # DISABLED: AWS Knowledge Base migrated to Supabase pgvector
+        enriched_context = ""
+        print("ℹ️  KB retrieval skipped for counsel (migrated to Supabase)")
         
         # Generate AI guidance with clear friend context handling
         if friend_context:

@@ -35,12 +35,6 @@ class DailyScraper:
             aws_access_key_id=settings.aws_access_key_id,
             aws_secret_access_key=settings.aws_secret_access_key,
         )
-        self.bedrock_agent = boto3.client(
-            'bedrock-agent',
-            region_name=settings.aws_region,
-            aws_access_key_id=settings.aws_access_key_id,
-            aws_secret_access_key=settings.aws_secret_access_key,
-        )
     
     def scrape_source(
         self,
@@ -167,20 +161,13 @@ class DailyScraper:
             return False
     
     def _sync_knowledge_base(self) -> bool:
-        """Trigger Knowledge Base to sync with new S3 data."""
-        try:
-            response = self.bedrock_agent.start_ingestion_job(
-                knowledgeBaseId=settings.bedrock_knowledge_base_id,
-                dataSourceId=settings.bedrock_data_source_id,  # Use actual data source ID
-            )
-            
-            ingestion_job_id = response['ingestionJob']['ingestionJobId']
-            print(f"✅ Started KB sync job: {ingestion_job_id}")
-            return True
-            
-        except Exception as e:
-            print(f"❌ Failed to sync KB: {e}")
-            return False
+        """
+        DEPRECATED: AWS Knowledge Base sync is no longer used.
+        We now use Supabase pgvector instead of AWS OpenSearch.
+        Keeping this method for backwards compatibility but it does nothing.
+        """
+        print("ℹ️  KB sync skipped (using Supabase pgvector instead of AWS KB)")
+        return True
     
     def run_daily_scrape(self) -> Dict[str, Any]:
         """

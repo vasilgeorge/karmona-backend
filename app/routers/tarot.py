@@ -73,54 +73,8 @@ async def draw_daily_card(
 
         # Get today's astrological context from KB
         enriched_context = ""
-        try:
-            from app.core.config import settings
-
-            bedrock_agent_runtime = boto3.client(
-                'bedrock-agent-runtime',
-                region_name=settings.aws_region,
-                aws_access_key_id=settings.aws_access_key_id,
-                aws_secret_access_key=settings.aws_secret_access_key,
-            )
-
-            # Build search query for tarot context
-            search_query = f"{user.sun_sign} {card.name} {' '.join(card.keywords[:3])} today"
-            if request.question:
-                search_query = f"{search_query} {request.question}"
-
-            print(f"🔍 Searching KB for tarot context: {search_query}")
-
-            response = bedrock_agent_runtime.retrieve(
-                knowledgeBaseId=settings.bedrock_knowledge_base_id,
-                retrievalQuery={'text': search_query},
-                retrievalConfiguration={
-                    'vectorSearchConfiguration': {
-                        'numberOfResults': 3,  # Fewer for tarot
-                    }
-                }
-            )
-
-            # Format results
-            retrieved_results = response.get('retrievalResults', [])
-            context_chunks = []
-
-            for i, result in enumerate(retrieved_results, 1):
-                if result.get('score', 0) > 0.3:
-                    try:
-                        doc = json.loads(result['content']['text'])
-                        content = doc.get('content', result['content']['text'])
-                        content = content.replace('\n', ' ').replace('\r', ' ').strip()
-                        context_chunks.append(content)
-                    except:
-                        sanitized = result['content']['text'].replace('\n', ' ').strip()
-                        context_chunks.append(sanitized)
-
-            if context_chunks:
-                enriched_context = "\n\nToday's cosmic context:\n" + "\n".join(context_chunks)
-                print(f"✅ Retrieved {len(context_chunks)} insights")
-
-        except Exception as e:
-            print(f"⚠️  KB retrieval error: {e}")
+        # DISABLED: AWS Knowledge Base migrated to Supabase pgvector
+        print("ℹ️  KB retrieval skipped for tarot (migrated to Supabase)")
 
         # Generate AI interpretation
         today = date.today()

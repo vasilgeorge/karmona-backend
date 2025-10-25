@@ -244,50 +244,8 @@ async def generate_compatibility_report(
         
         # Get today's astrological context from KB for compatibility
         enriched_context = ""
-        try:
-            bedrock_agent_runtime = boto3.client(
-                'bedrock-agent-runtime',
-                region_name=settings.aws_region,
-                aws_access_key_id=settings.aws_access_key_id,
-                aws_secret_access_key=settings.aws_secret_access_key,
-            )
-
-            # Build search query for compatibility context
-            search_query = f"{user.sun_sign} {friend['sun_sign']} compatibility relationship {friend['relationship_type']}"
-
-            print(f"🔍 Searching KB for compatibility context: {search_query}")
-
-            response = bedrock_agent_runtime.retrieve(
-                knowledgeBaseId=settings.bedrock_knowledge_base_id,
-                retrievalQuery={'text': search_query},
-                retrievalConfiguration={
-                    'vectorSearchConfiguration': {
-                        'numberOfResults': 3,
-                    }
-                }
-            )
-
-            # Format results
-            retrieved_results = response.get('retrievalResults', [])
-            context_chunks = []
-
-            for i, result in enumerate(retrieved_results, 1):
-                if result.get('score', 0) > 0.3:
-                    try:
-                        doc = json.loads(result['content']['text'])
-                        content = doc.get('content', result['content']['text'])
-                        content = content.replace('\n', ' ').replace('\r', ' ').strip()
-                        context_chunks.append(content)
-                    except:
-                        sanitized = result['content']['text'].replace('\n', ' ').strip()
-                        context_chunks.append(sanitized)
-
-            if context_chunks:
-                enriched_context = "\n\nToday's astrological context:\n" + "\n".join(context_chunks)
-                print(f"✅ Retrieved {len(context_chunks)} compatibility insights")
-
-        except Exception as e:
-            print(f"⚠️  KB retrieval error: {e}")
+        # DISABLED: AWS Knowledge Base migrated to Supabase pgvector
+        print("ℹ️  KB retrieval skipped for friend recommendations (migrated to Supabase)")
 
         # Generate new compatibility report
         print(f"🤖 Generating compatibility report: {user.name} + {friend['nickname']}")
@@ -414,50 +372,8 @@ async def generate_social_recommendations(
 
         # Get today's astrological context from KB
         enriched_context = ""
-        try:
-            bedrock_agent_runtime = boto3.client(
-                'bedrock-agent-runtime',
-                region_name=settings.aws_region,
-                aws_access_key_id=settings.aws_access_key_id,
-                aws_secret_access_key=settings.aws_secret_access_key,
-            )
-
-            # Build search query for today's cosmic energy
-            search_query = f"{user.sun_sign} daily horoscope social interactions moon phase today"
-
-            print(f"🔍 Searching KB for social recommendations context: {search_query}")
-
-            response = bedrock_agent_runtime.retrieve(
-                knowledgeBaseId=settings.bedrock_knowledge_base_id,
-                retrievalQuery={'text': search_query},
-                retrievalConfiguration={
-                    'vectorSearchConfiguration': {
-                        'numberOfResults': 3,
-                    }
-                }
-            )
-
-            # Format results
-            retrieved_results = response.get('retrievalResults', [])
-            context_chunks = []
-
-            for i, result in enumerate(retrieved_results, 1):
-                if result.get('score', 0) > 0.3:
-                    try:
-                        doc = json.loads(result['content']['text'])
-                        content = doc.get('content', result['content']['text'])
-                        content = content.replace('\n', ' ').replace('\r', ' ').strip()
-                        context_chunks.append(content)
-                    except:
-                        sanitized = result['content']['text'].replace('\n', ' ').strip()
-                        context_chunks.append(sanitized)
-
-            if context_chunks:
-                enriched_context = "\n\nToday's astrological context:\n" + "\n".join(context_chunks)
-                print(f"✅ Retrieved {len(context_chunks)} social insights")
-
-        except Exception as e:
-            print(f"⚠️  KB retrieval error: {e}")
+        # DISABLED: AWS Knowledge Base migrated to Supabase pgvector
+        print("ℹ️  KB retrieval skipped for social recommendations (migrated to Supabase)")
 
         # Generate social recommendations
         print(f"🤖 Generating social recommendations for {user.name}")
