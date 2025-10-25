@@ -61,30 +61,73 @@ class CheckInStatusResponse(BaseModel):
 async def get_check_in_status(user_id: CurrentUserId) -> CheckInStatusResponse:
     """
     Check if user needs to complete today's check-in.
-    
+
     Returns needs_check_in=True if:
-    - No check-in exists for today, OR
-    - Last check-in was more than 24 hours ago
+    - Current time >= user's preferred check-in time AND no check-in exists for today
+
+    Returns needs_check_in=False if:
+    - Today's check-in already exists, OR
+    - Current time < user's preferred check-in time (not time yet)
     """
     try:
         supabase_service = SupabaseService()
+
+        # Get user's preferred check-in time
+        user = await supabase_service.get_user(str(user_id))
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        preferred_time = user.preferred_checkin_time or "09:00:00"
+
         # Get most recent check-in
         result = supabase_service.client.table("daily_check_ins").select("*").eq(
             "user_id", str(user_id)
         ).order("check_in_date", desc=True).limit(1).execute()
-        
+
+        today = date.today()
+        now = datetime.now()
+
+        # Parse preferred check-in time (HH:MM:SS format)
+        time_parts = preferred_time.split(":")
+        preferred_hour = int(time_parts[0])
+        preferred_minute = int(time_parts[1])
+
+        # Create datetime for today's preferred check-in time
+        preferred_datetime = datetime.combine(today, datetime.min.time()).replace(
+            hour=preferred_hour,
+            minute=preferred_minute,
+            second=0,
+            microsecond=0
+        )
+
+        # If current time is before preferred time, user doesn't need to check in yet
+        if now < preferred_datetime:
+            last_check_in_date = None
+            hours_since = None
+            if result.data:
+                last_check_in = result.data[0]
+                last_check_in_date = datetime.strptime(last_check_in["check_in_date"], "%Y-%m-%d").date()
+                last_created = datetime.fromisoformat(last_check_in["created_at"].replace("Z", "+00:00"))
+                hours_since = (datetime.now(last_created.tzinfo) - last_created).total_seconds() / 3600
+
+            return CheckInStatusResponse(
+                needs_check_in=False,
+                last_check_in_date=last_check_in_date,
+                hours_since_last=round(hours_since, 1) if hours_since else None
+            )
+
+        # Current time >= preferred time, check if today's check-in exists
         if not result.data:
-            # No check-ins at all
+            # No check-ins at all and it's time
             return CheckInStatusResponse(
                 needs_check_in=True,
                 last_check_in_date=None,
                 hours_since_last=None
             )
-        
+
         last_check_in = result.data[0]
         last_date = datetime.strptime(last_check_in["check_in_date"], "%Y-%m-%d").date()
-        today = date.today()
-        
+
         # Check if today's check-in exists
         if last_date >= today:
             return CheckInStatusResponse(
@@ -92,17 +135,17 @@ async def get_check_in_status(user_id: CurrentUserId) -> CheckInStatusResponse:
                 last_check_in_date=last_date,
                 hours_since_last=0.0
             )
-        
+
         # Calculate hours since last check-in
         last_created = datetime.fromisoformat(last_check_in["created_at"].replace("Z", "+00:00"))
         hours_since = (datetime.now(last_created.tzinfo) - last_created).total_seconds() / 3600
-        
+
         return CheckInStatusResponse(
             needs_check_in=True,
             last_check_in_date=last_date,
             hours_since_last=round(hours_since, 1)
         )
-        
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to check status: {str(e)}")
 
